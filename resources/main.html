@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Test</title>
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
+    <!-- CSS -->
+    <link rel="stylesheet" href="http://127.0.0.1:8080/static/main.css">
+</head>
+
+<body>
+    <div id="mapid"></div>
+    <script>
+        var mymap = L.map('mapid').setView([48.856, 2.352], 6.2);
+
+        L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
+            attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+            maxZoom: 18,
+            id: 'mapbox/streets-v11',
+            tileSize: 512,
+            zoomOffset: -1,
+            accessToken: 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw'
+        }).addTo(mymap);
+
+        var markerList = [];
+        var popupList = [];
+
+        function onMapClick(e) {
+            markerName = 'Temp marker';
+
+            // Create marker
+            var marker = L.marker(e.latlng, title = 'Temp name');
+            markerList.push(marker);
+            marker.addTo(mymap);
+
+            // Create popup
+            var popup = L.popup().setContent("<h3>" + markerName + "</h3><form><input type='text' name='Marker name'></form>");
+
+            popupList.push(popup);
+            marker.bindPopup(popup).openPopup();
+
+            popup.on('remove', function (e) {
+                console.log('Popup closed');
+                console.log(e);
+            });
+        }
+
+        mymap.on('click', onMapClick);
+    </script>
+</body>
+
+</html>
