@@ -32,25 +32,29 @@ type Photo struct {
 	Date        string `json:"date"`
 }
 
-// Route functions
-func getMarkers(context *gin.Context) {
+
+func getJsonData(context *gin.Context) Data {
 	jsonData, fileError := os.Open(JSON_PATH)
+	var data Data;
 
 	if fileError != nil {
 		context.Status(http.StatusInternalServerError)
-		return
+		return data
 	}
 	defer jsonData.Close()
 
 	byteValue, decodingError := ioutil.ReadAll(jsonData)
 	if decodingError != nil {
 		context.Status(http.StatusInternalServerError)
-		return
+		return data
 	}
-
-	var data Data
 	json.Unmarshal(byteValue, &data)
+	return data;
+}
 
+// Route functions
+func getMarkers(context *gin.Context) {
+	data:=getJsonData(context);
 	context.JSON(http.StatusOK, data.Markers)
 }
 
