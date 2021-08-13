@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -38,18 +37,27 @@ func getJsonData(context *gin.Context) Data {
 	var data Data
 
 	if fileError != nil {
-		context.Status(http.StatusInternalServerError)
-		return data
+		context.AbortWithStatus(http.StatusInternalServerError)
 	}
 	defer jsonData.Close()
 
 	byteValue, decodingError := ioutil.ReadAll(jsonData)
 	if decodingError != nil {
-		context.Status(http.StatusInternalServerError)
-		return data
+		context.AbortWithStatus(http.StatusInternalServerError)
 	}
 	json.Unmarshal(byteValue, &data)
 	return data
+}
+
+func setJsonData(context *gin.Context, data Data) {
+	file, marshalError := json.MarshalIndent(data, "", "    ")
+	if marshalError != nil {
+		context.AbortWithStatus(http.StatusInternalServerError)
+	}
+	writeError := ioutil.WriteFile(JSON_PATH, file, 0777)
+	if writeError != nil {
+		context.AbortWithStatus(http.StatusInternalServerError)
+	}
 }
 
 // Route functions
@@ -58,18 +66,25 @@ func getMarkers(context *gin.Context) {
 	context.JSON(http.StatusOK, data.Markers)
 }
 
-//WARNING : latitude and longitude strings must be trimmed in client (no unnecessaty 0 at the end)
+//WARNING : latitude and longitude strings must be trimmed in client (no unnecessary 0 at the end)
 func getMarker(context *gin.Context) {
 	data := getJsonData(context)
 	latitude := context.Query("latitude")
 	longitude := context.Query("longitude")
 	for _, marker := range data.Markers {
 		if marker.Latitude == latitude && marker.Longitude == longitude {
-			fmt.Println("found marker !!!!!!!!!!!!!!!!!!!!!")
 			context.JSON(http.StatusOK, marker)
 			return
 		}
 	}
+}
+
+func addMarker(context *gin.Context) {
+	var markerData Marker
+	context.BindJSON(&markerData)
+	currentData := getJsonData(context)
+	currentData.Markers = append(currentData.Markers, markerData)
+	setJsonData(context, currentData)
 }
 
 func main() {
@@ -86,6 +101,7 @@ func main() {
 	// Dynamic routing
 	router.GET("/markers", getMarkers)
 	router.GET("/marker", getMarker)
+	router.PUT("/marker", addMarker)
 
 	// Listen and serve on localhost:8080
 	router.Run()
