@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,6 +14,7 @@ import (
 // Consts definitions
 //--------------------------------------------------------------------------------------------------------------------//
 const JSON_PATH = "./data/data.json"
+const PHOTOS_PATH = "./data/photos/"
 
 //--------------------------------------------------------------------------------------------------------------------//
 // Structs definitions
@@ -32,45 +34,58 @@ type Marker struct {
 type Photo struct {
 	Id          int    `json:"id"`
 	FileName    string `json:"fileName"`
-	Description string `json:"description"`
-	Date        string `json:"date"`
+	Description string `json:"descrition"`
+	Date        string `json:"date"` // Format YYYY-MM-DD
+}
+
+type MinimalMarkers struct {
+	Markers []MinimalMarker `json:"markers"`
+}
+
+type MinimalMarker struct {
+	Name      string `json:"name"`
+	Latitude  string `json:"latitude"`
+	Longitude string `json:"longitude"`
 }
 
 //--------------------------------------------------------------------------------------------------------------------//
 // Utilities functions
 //--------------------------------------------------------------------------------------------------------------------//
-func getJsonData(context *gin.Context) Data {
+func getJsonData(context *gin.Context) (Data, error) {
 	var data Data
 
 	jsonData, fileError := os.Open(JSON_PATH)
 	if fileError != nil {
-		context.AbortWithStatus(http.StatusInternalServerError)
+		return data, fileError
 	}
 	defer jsonData.Close()
 
 	byteValue, decodingError := ioutil.ReadAll(jsonData)
 	if decodingError != nil {
-		context.AbortWithStatus(http.StatusInternalServerError)
+		return data, decodingError
 	}
 
 	json.Unmarshal(byteValue, &data)
-	return data
+	return data, nil
 }
 
-func setJsonData(context *gin.Context, data Data) {
+func setJsonData(context *gin.Context, data Data) error {
 	file, marshalError := json.MarshalIndent(data, "", "    ")
 	if marshalError != nil {
-		context.AbortWithStatus(http.StatusInternalServerError)
+		return marshalError
 	}
 
 	writeError := ioutil.WriteFile(JSON_PATH, file, 0777)
 	if writeError != nil {
-		context.AbortWithStatus(http.StatusInternalServerError)
+		return writeError
 	}
+
+	return nil
 }
 
 func removeMarkerFromArray(markerArray []Marker, removeIndex int) []Marker {
 	markerArray[removeIndex] = markerArray[len(markerArray)-1]
+
 	return markerArray[:len(markerArray)-1]
 }
 
@@ -78,13 +93,34 @@ func removeMarkerFromArray(markerArray []Marker, removeIndex int) []Marker {
 // Route functions
 //--------------------------------------------------------------------------------------------------------------------//
 func getMarkers(context *gin.Context) {
-	data := getJsonData(context)
+	data, readError := getJsonData(context)
+	if readError != nil {
+		context.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	// Remove photos and photoCount from response
+	var dataToSend MinimalMarkers
+	for _, marker := range data.Markers {
+		var minimalMarker MinimalMarker
+		minimalMarker.Name = marker.Name
+		minimalMarker.Latitude = marker.Latitude
+		minimalMarker.Longitude = marker.Longitude
+
+		dataToSend.Markers = append(dataToSend.Markers, minimalMarker)
+	}
+
 	context.JSON(http.StatusOK, data.Markers)
 }
 
-// WARNING: latitude and longitude strings must be trimmed client side (no unnecessary 0 at the end)
+// WARNING - latitude and longitude strings must be trimmed on client side (no unnecessary 0 at the end)
 func getMarker(context *gin.Context) {
-	data := getJsonData(context)
+	data, readError := getJsonData(context)
+	if readError != nil {
+		context.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
 	latitude := context.Param("latitude")
 	longitude := context.Param("longitude")
 	for _, marker := range data.Markers {
@@ -93,19 +129,37 @@ func getMarker(context *gin.Context) {
 			return
 		}
 	}
+
 	context.AbortWithStatus(http.StatusNotFound)
 }
 
 func addMarker(context *gin.Context) {
 	var markerData Marker
 	context.BindJSON(&markerData)
-	currentData := getJsonData(context)
+
+	currentData, readError := getJsonData(context)
+	if readError != nil {
+		context.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
 	currentData.Markers = append(currentData.Markers, markerData)
-	setJsonData(context, currentData)
+	writeError := setJsonData(context, currentData)
+	if writeError != nil {
+		context.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	context.Status(http.StatusOK)
 }
 
 func editMarker(context *gin.Context) {
-	data := getJsonData(context)
+	data, readError := getJsonData(context)
+	if readError != nil {
+		context.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
 	latitude := context.Param("latitude")
 	longitude := context.Param("longitude")
 	for index, marker := range data.Markers {
@@ -118,27 +172,88 @@ func editMarker(context *gin.Context) {
 			marker.Name = markerData.Name
 
 			data.Markers[index] = marker
+			writeError := setJsonData(context, data)
+			if writeError != nil {
+				context.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
 
-			setJsonData(context, data)
 			context.Status(http.StatusOK)
 			return
 		}
 	}
+
 	context.AbortWithStatus(http.StatusNotFound)
 }
 
 func deleteMarker(context *gin.Context) {
-	data := getJsonData(context)
+	data, readError := getJsonData(context)
+	if readError != nil {
+		context.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
 	latitude := context.Param("latitude")
 	longitude := context.Param("longitude")
 	for index, marker := range data.Markers {
 		if marker.Latitude == latitude && marker.Longitude == longitude {
 			data.Markers = removeMarkerFromArray(data.Markers, index)
-			setJsonData(context, data)
+			writeError := setJsonData(context, data)
+			if writeError != nil {
+				context.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
+
 			context.Status(http.StatusOK)
 			return
 		}
 	}
+
+	context.AbortWithStatus(http.StatusNotFound)
+}
+
+func addPhoto(context *gin.Context) {
+	data, readError := getJsonData(context)
+	if readError != nil {
+		context.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	file, fileError := context.FormFile("photo")
+	if fileError != nil {
+		context.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	latitude := context.Param("latitude")
+	longitude := context.Param("longitude")
+	for index, marker := range data.Markers {
+		if marker.Latitude == latitude && marker.Longitude == longitude {
+			data.PhotoCount++
+
+			var photo Photo
+			photo.Id = data.PhotoCount
+			photo.FileName = strconv.Itoa(data.PhotoCount) + "_" + context.Query("fileName")
+			photo.Description = context.Query("description")
+			photo.Date = context.Query("date")
+
+			marker.Photos = append(marker.Photos, photo)
+
+			// Upload the file to the specified destination
+			context.SaveUploadedFile(file, PHOTOS_PATH+photo.FileName)
+
+			data.Markers[index] = marker
+			writeError := setJsonData(context, data)
+			if writeError != nil {
+				context.AbortWithStatus(http.StatusInternalServerError)
+				return
+			}
+
+			context.Status(http.StatusOK)
+			return
+		}
+	}
+
 	context.AbortWithStatus(http.StatusNotFound)
 }
 
@@ -162,6 +277,8 @@ func main() {
 	router.PUT("/marker", addMarker)
 	router.POST("/marker/:latitude/:longitude", editMarker)
 	router.DELETE("/marker/:latitude/:longitude", deleteMarker)
+
+	router.POST("/marker/:latitude/:longitude/addPhoto", addPhoto)
 
 	// Listen and serve on localhost:8080
 	router.Run()
