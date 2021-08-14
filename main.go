@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -197,11 +198,26 @@ func deleteMarker(context *gin.Context) {
 	longitude := context.Param("longitude")
 	for index, marker := range data.Markers {
 		if marker.Latitude == latitude && marker.Longitude == longitude {
+			// Store path to related photos
+			var photosToDelete []string
+			for _, photo := range marker.Photos {
+				photosToDelete = append(photosToDelete, PHOTOS_PATH+photo.FileName)
+			}
+
+			// Remove marker from data
 			data.Markers = removeMarkerFromArray(data.Markers, index)
 			writeError := setJsonData(context, data)
 			if writeError != nil {
 				context.AbortWithStatus(http.StatusInternalServerError)
 				return
+			}
+
+			// Remove related photos
+			for _, photoPath := range photosToDelete {
+				deletionError := os.Remove(photoPath)
+				if deletionError != nil {
+					fmt.Println("Error deleting " + photoPath + " with '" + deletionError.Error() + "'")
+				}
 			}
 
 			context.Status(http.StatusOK)
