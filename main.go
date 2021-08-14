@@ -127,7 +127,7 @@ func getMarkers(context *gin.Context) {
 		dataToSend.Markers = append(dataToSend.Markers, minimalMarker)
 	}
 
-	context.JSON(http.StatusOK, data.Markers)
+	context.JSON(http.StatusOK, dataToSend)
 }
 
 // WARNING - latitude and longitude strings must be trimmed on client side (no unnecessary 0 at the end)
@@ -152,7 +152,11 @@ func getMarker(context *gin.Context) {
 
 func addMarker(context *gin.Context) {
 	var markerData Marker
-	context.BindJSON(&markerData)
+	requestError := context.BindJSON(&markerData)
+	if requestError != nil {
+		context.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
 
 	currentData, readError := getJsonData(context)
 	if readError != nil {
@@ -182,7 +186,11 @@ func editMarker(context *gin.Context) {
 	for index, marker := range data.Markers {
 		if marker.Latitude == latitude && marker.Longitude == longitude {
 			var markerData Marker
-			context.BindJSON(&markerData)
+			requestError := context.BindJSON(&markerData)
+			if requestError != nil {
+				context.AbortWithStatus(http.StatusBadRequest)
+				return
+			}
 
 			marker.Latitude = markerData.Latitude
 			marker.Longitude = markerData.Longitude
@@ -304,7 +312,11 @@ func editPhoto(context *gin.Context) {
 			for photoIndex, photo := range marker.Photos {
 				if photo.Id == photoId {
 					var photoData Photo
-					context.BindJSON(&photoData)
+					requestError := context.BindJSON(&photoData)
+					if requestError != nil {
+						context.AbortWithStatus(http.StatusBadRequest)
+						return
+					}
 
 					photo.Description = photoData.Description
 					photo.Date = photoData.Date
