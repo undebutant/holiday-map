@@ -289,6 +289,43 @@ func addPhoto(context *gin.Context) {
 	context.AbortWithStatus(http.StatusNotFound)
 }
 
+func editPhoto(context *gin.Context) {
+	data, readError := getJsonData(context)
+	if readError != nil {
+		context.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	latitude := context.Param("latitude")
+	longitude := context.Param("longitude")
+	photoId, _ := strconv.Atoi(context.Param("photoId"))
+	for index, marker := range data.Markers {
+		if marker.Latitude == latitude && marker.Longitude == longitude {
+			for photoIndex, photo := range marker.Photos {
+				if photo.Id == photoId {
+					var photoData Photo
+					context.BindJSON(&photoData)
+
+					photo.Description = photoData.Description
+					photo.Date = photoData.Date
+
+					data.Markers[index].Photos[photoIndex] = photo
+					writeError := setJsonData(context, data)
+					if writeError != nil {
+						context.AbortWithStatus(http.StatusInternalServerError)
+						return
+					}
+
+					context.Status(http.StatusOK)
+					return
+				}
+			}
+		}
+	}
+
+	context.AbortWithStatus(http.StatusNotFound)
+}
+
 func deletePhoto(context *gin.Context) {
 	data, readError := getJsonData(context)
 	if readError != nil {
@@ -352,7 +389,8 @@ func main() {
 	router.POST("/marker/:latitude/:longitude", editMarker)
 	router.DELETE("/marker/:latitude/:longitude", deleteMarker)
 
-	router.POST("/marker/:latitude/:longitude/addPhoto", addPhoto)
+	router.POST("/marker/:latitude/:longitude/photo", addPhoto)
+	router.POST("/marker/:latitude/:longitude/photo/:photoId", editPhoto)
 	router.DELETE("/marker/:latitude/:longitude/photo/:photoId", deletePhoto)
 
 	// Listen and serve on localhost:8080
