@@ -85,9 +85,25 @@ func setJsonData(context *gin.Context, data Data) error {
 }
 
 func removeMarkerFromArray(markerArray []Marker, removeIndex int) []Marker {
-	markerArray[removeIndex] = markerArray[len(markerArray)-1]
+	if len(markerArray) == 1 {
+		markerArray = markerArray[:0]
+	} else {
+		markerArray[removeIndex] = markerArray[len(markerArray)-1]
+		markerArray = markerArray[:len(markerArray)-1]
+	}
 
-	return markerArray[:len(markerArray)-1]
+	return markerArray
+}
+
+func removePhotoFromArray(photoArray []Photo, removeIndex int) []Photo {
+	if len(photoArray) == 1 {
+		photoArray = photoArray[:0]
+	} else {
+		photoArray[removeIndex] = photoArray[len(photoArray)-1]
+		photoArray = photoArray[:len(photoArray)-1]
+	}
+
+	return photoArray
 }
 
 //--------------------------------------------------------------------------------------------------------------------//
@@ -273,6 +289,48 @@ func addPhoto(context *gin.Context) {
 	context.AbortWithStatus(http.StatusNotFound)
 }
 
+func deletePhoto(context *gin.Context) {
+	data, readError := getJsonData(context)
+	if readError != nil {
+		context.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	latitude := context.Param("latitude")
+	longitude := context.Param("longitude")
+	photoId, _ := strconv.Atoi(context.Param("photoId"))
+	for index, marker := range data.Markers {
+		if marker.Latitude == latitude && marker.Longitude == longitude {
+			for photoIndex, photo := range marker.Photos {
+				if photo.Id == photoId {
+					pathToDelete := PHOTOS_PATH + photo.FileName
+
+					// Remove photo from data
+					marker.Photos = removePhotoFromArray(marker.Photos, photoIndex)
+
+					data.Markers[index] = marker
+					writeError := setJsonData(context, data)
+					if writeError != nil {
+						context.AbortWithStatus(http.StatusInternalServerError)
+						return
+					}
+
+					// Remove photo file
+					deletionError := os.Remove(pathToDelete)
+					if deletionError != nil {
+						fmt.Println("Error deleting " + pathToDelete + " with '" + deletionError.Error() + "'")
+					}
+
+					context.Status(http.StatusOK)
+					return
+				}
+			}
+		}
+	}
+
+	context.AbortWithStatus(http.StatusNotFound)
+}
+
 //--------------------------------------------------------------------------------------------------------------------//
 // Main
 //--------------------------------------------------------------------------------------------------------------------//
@@ -295,6 +353,7 @@ func main() {
 	router.DELETE("/marker/:latitude/:longitude", deleteMarker)
 
 	router.POST("/marker/:latitude/:longitude/addPhoto", addPhoto)
+	router.DELETE("/marker/:latitude/:longitude/photo/:photoId", deletePhoto)
 
 	// Listen and serve on localhost:8080
 	router.Run()
