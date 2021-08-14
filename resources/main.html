@@ -33,34 +33,121 @@
                 }
             }
         }
-        function addMarkerRequest(){
-
+        function addMarkerRequest(latitude, longitude){
+            httpRequest = new XMLHttpRequest();
+            httpRequest.open('PUT', 'http://127.0.0.1:8080/marker/', true);
+            httpRequest.onreadystatechange = addMarkerHandleResponse;
+            httpRequest.send(); //send JSOn
+            // HTTP request
+            function addMarkerHandleResponse(){
+                if (httpRequest.readyState === XMLHttpRequest.DONE) {
+                    if (httpRequest.status === 200) {
+                        
+                    } else {
+                        alert('PROBLEM WITH REQUEST.');
+                    }
+                }
+            }
         }
-        function getMarkerRequest(){
-
+        function getMarkerRequest(latitude, longitude){
+            httpRequest = new XMLHttpRequest();
+            httpRequest.open('GET', 'http://127.0.0.1:8080/marker/'+latitude.toString()+"/"+longitude.toString, true);
+            httpRequest.onreadystatechange = getMarkerHandleResponse;
+            httpRequest.send();
+            // HTTP request
+            function getMArkerHandleResponse(){
+                if (httpRequest.readyState === XMLHttpRequest.DONE) {
+                    if (httpRequest.status === 200) {
+                        response=httpRequest.response;
+                        console.log(response);
+                    } else {
+                        alert('PROBLEM WITH REQUEST.');
+                    }
+                }
+            }
         }
-        function editMarkerRequest(){
+        function editMarkerRequest(latitude, longitude){
+            httpRequest = new XMLHttpRequest();
+            httpRequest.open('POST', 'http://127.0.0.1:8080/marker/'+latitude.toString()+"/"+longitude.toString(), true);
+            httpRequest.onreadystatechange = editMarkerHandleResponse;
+            httpRequest.send();
+            // HTTP request
+            function editMarkerHandleResponse(){
+                if (httpRequest.readyState === XMLHttpRequest.DONE) {
+                    if (httpRequest.status === 200) {
 
+                    } else {
+                        alert('PROBLEM WITH REQUEST.');
+                    }
+                }
+            }
         }
-        function deleteMarkerRequest(){
-
-        }
-        function getPhotoRequest(){
-
-        }
-        function editPhotoRequest(){
-
-        }
-        function deletePhotoRequest(){
-
-        }
-        function addPhotoRequest(){
-
+        function deleteMarkerRequest(latitude,longitude){
+            httpRequest = new XMLHttpRequest();
+            httpRequest.open('DELETE', 'http://127.0.0.1:8080/marker/'+latitude.toString()+"/"+longitude.toString(), true);
+            httpRequest.onreadystatechange = deleteMarkerHandleResponse;
+            httpRequest.send();
+            // HTTP request
+            function deleteMarkerHandleResponse(){
+                if (httpRequest.readyState === XMLHttpRequest.DONE) {
+                    if (httpRequest.status === 200) {
+                        
+                    } else {
+                        alert('PROBLEM WITH REQUEST.');
+                    }
+                }
+            }
         }
         
-        console.log("hi");
-        getAllMarkersRequest();
+        function editPhotoRequest(latitude, longitude, photoId){
+            httpRequest = new XMLHttpRequest();
+            httpRequest.open('POST', 'http://127.0.0.1:8080/marker/'+latitude.toString()+"/"+longitude.toString()+"/photo/"+photoId, true);
+            httpRequest.onreadystatechange = editPhotoHandleResponse;
+            httpRequest.send();
+            // HTTP request
+            function editPhotoHandleResponse(){
+                if (httpRequest.readyState === XMLHttpRequest.DONE) {
+                    if (httpRequest.status === 200) {
+                        
+                    } else {
+                        alert('PROBLEM WITH REQUEST.');
+                    }
+                }
+            }
+        }
+        function deletePhotoRequest(){
+            httpRequest = new XMLHttpRequest();
+            httpRequest.open('DELETE', 'http://127.0.0.1:8080/marker/'+latitude.toString()+"/"+longitude.toString()+"/photo/"+photoId, true);
+            httpRequest.onreadystatechange = deletePhotoHandleResponse;
+            httpRequest.send();
+            // HTTP request
+            function deletePhotoHandleResponse(){
+                if (httpRequest.readyState === XMLHttpRequest.DONE) {
+                    if (httpRequest.status === 200) {
 
+                    } else {
+                        alert('PROBLEM WITH REQUEST.');
+                    }
+                }
+            }
+        }
+        function addPhotoRequest(latitude, longitude){
+            httpRequest = new XMLHttpRequest();
+            httpRequest.open('POST', 'http://127.0.0.1:8080/markers/'+latitude.toString()+"/"+longitude.toString()+"/photo", true);
+            httpRequest.onreadystatechange = addPhotoHandleResponse;
+            httpRequest.send();
+            // HTTP request
+            function addPhotoHandleResponse(){
+                if (httpRequest.readyState === XMLHttpRequest.DONE) {
+                    if (httpRequest.status === 200) {
+                        response=httpRequest.response;
+                        console.log(response);
+                    } else {
+                        alert('PROBLEM WITH REQUEST.');
+                    }
+                }
+            }
+        }
 
         var mymap = L.map('mapid').setView([48.856, 2.352], 6.2);
 
