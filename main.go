@@ -35,7 +35,7 @@ type Marker struct {
 type Photo struct {
 	Id          int    `json:"id"`
 	FileName    string `json:"fileName"`
-	Description string `json:"descrition"`
+	Description string `json:"description"`
 	Date        string `json:"date"` // Format YYYY-MM-DD
 }
 
@@ -377,6 +377,7 @@ func main() {
 
 	// Serve static web files
 	router.StaticFile("/", "./resources/main.html")
+	router.StaticFile("/favicon.ico", "./resources/favicon.ico")
 	router.StaticFile("/static/main.css", "./resources/main.css")
 
 	// Serve photos

@@ -15,6 +15,53 @@
 <body>
     <div id="mapid"></div>
     <script>
+
+        function getAllMarkersRequest(){
+            httpRequest = new XMLHttpRequest();
+            httpRequest.open('GET', 'http://127.0.0.1:8080/markers', true);
+            httpRequest.onreadystatechange = getAllMarkersHandleResponse;
+            httpRequest.send();
+            // HTTP request
+            function getAllMarkersHandleResponse(){
+                if (httpRequest.readyState === XMLHttpRequest.DONE) {
+                    if (httpRequest.status === 200) {
+                        response=httpRequest.response;
+                        console.log(response);
+                    } else {
+                        alert('PROBLEM WITH REQUEST.');
+                    }
+                }
+            }
+        }
+        function addMarkerRequest(){
+
+        }
+        function getMarkerRequest(){
+
+        }
+        function editMarkerRequest(){
+
+        }
+        function deleteMarkerRequest(){
+
+        }
+        function getPhotoRequest(){
+
+        }
+        function editPhotoRequest(){
+
+        }
+        function deletePhotoRequest(){
+
+        }
+        function addPhotoRequest(){
+
+        }
+        
+        console.log("hi");
+        getAllMarkersRequest();
+
+
         var mymap = L.map('mapid').setView([48.856, 2.352], 6.2);
 
         L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
