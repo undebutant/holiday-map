@@ -15,141 +15,52 @@
 <body>
     <div id="mapid"></div>
     <script>
+        //----------------------------------------------------------------------------//
+        // Consts
+        //----------------------------------------------------------------------------//
+        const API_PATH = 'http://127.0.0.1:8080'
 
-        function getAllMarkersRequest(){
-            httpRequest = new XMLHttpRequest();
-            httpRequest.open('GET', 'http://127.0.0.1:8080/markers', true);
-            httpRequest.onreadystatechange = getAllMarkersHandleResponse;
-            httpRequest.send();
-            // HTTP request
-            function getAllMarkersHandleResponse(){
-                if (httpRequest.readyState === XMLHttpRequest.DONE) {
-                    if (httpRequest.status === 200) {
-                        response=httpRequest.response;
-                        console.log(response);
-                    } else {
-                        alert('PROBLEM WITH REQUEST.');
-                    }
-                }
+        //----------------------------------------------------------------------------//
+        // Objects definitions
+        //----------------------------------------------------------------------------//
+        class Markers {
+            constructor(markers) {
+                this.markers = markers;
             }
-        }
-        function addMarkerRequest(latitude, longitude){
-            httpRequest = new XMLHttpRequest();
-            httpRequest.open('PUT', 'http://127.0.0.1:8080/marker/', true);
-            httpRequest.onreadystatechange = addMarkerHandleResponse;
-            httpRequest.send(); //send JSOn
-            // HTTP request
-            function addMarkerHandleResponse(){
-                if (httpRequest.readyState === XMLHttpRequest.DONE) {
-                    if (httpRequest.status === 200) {
-                        
-                    } else {
-                        alert('PROBLEM WITH REQUEST.');
-                    }
-                }
-            }
-        }
-        function getMarkerRequest(latitude, longitude){
-            httpRequest = new XMLHttpRequest();
-            httpRequest.open('GET', 'http://127.0.0.1:8080/marker/'+latitude.toString()+"/"+longitude.toString, true);
-            httpRequest.onreadystatechange = getMarkerHandleResponse;
-            httpRequest.send();
-            // HTTP request
-            function getMArkerHandleResponse(){
-                if (httpRequest.readyState === XMLHttpRequest.DONE) {
-                    if (httpRequest.status === 200) {
-                        response=httpRequest.response;
-                        console.log(response);
-                    } else {
-                        alert('PROBLEM WITH REQUEST.');
-                    }
-                }
-            }
-        }
-        function editMarkerRequest(latitude, longitude){
-            httpRequest = new XMLHttpRequest();
-            httpRequest.open('POST', 'http://127.0.0.1:8080/marker/'+latitude.toString()+"/"+longitude.toString(), true);
-            httpRequest.onreadystatechange = editMarkerHandleResponse;
-            httpRequest.send();
-            // HTTP request
-            function editMarkerHandleResponse(){
-                if (httpRequest.readyState === XMLHttpRequest.DONE) {
-                    if (httpRequest.status === 200) {
 
-                    } else {
-                        alert('PROBLEM WITH REQUEST.');
-                    }
-                }
-            }
-        }
-        function deleteMarkerRequest(latitude,longitude){
-            httpRequest = new XMLHttpRequest();
-            httpRequest.open('DELETE', 'http://127.0.0.1:8080/marker/'+latitude.toString()+"/"+longitude.toString(), true);
-            httpRequest.onreadystatechange = deleteMarkerHandleResponse;
-            httpRequest.send();
-            // HTTP request
-            function deleteMarkerHandleResponse(){
-                if (httpRequest.readyState === XMLHttpRequest.DONE) {
-                    if (httpRequest.status === 200) {
-                        
-                    } else {
-                        alert('PROBLEM WITH REQUEST.');
-                    }
-                }
-            }
-        }
-        
-        function editPhotoRequest(latitude, longitude, photoId){
-            httpRequest = new XMLHttpRequest();
-            httpRequest.open('POST', 'http://127.0.0.1:8080/marker/'+latitude.toString()+"/"+longitude.toString()+"/photo/"+photoId, true);
-            httpRequest.onreadystatechange = editPhotoHandleResponse;
-            httpRequest.send();
-            // HTTP request
-            function editPhotoHandleResponse(){
-                if (httpRequest.readyState === XMLHttpRequest.DONE) {
-                    if (httpRequest.status === 200) {
-                        
-                    } else {
-                        alert('PROBLEM WITH REQUEST.');
-                    }
-                }
-            }
-        }
-        function deletePhotoRequest(){
-            httpRequest = new XMLHttpRequest();
-            httpRequest.open('DELETE', 'http://127.0.0.1:8080/marker/'+latitude.toString()+"/"+longitude.toString()+"/photo/"+photoId, true);
-            httpRequest.onreadystatechange = deletePhotoHandleResponse;
-            httpRequest.send();
-            // HTTP request
-            function deletePhotoHandleResponse(){
-                if (httpRequest.readyState === XMLHttpRequest.DONE) {
-                    if (httpRequest.status === 200) {
-
-                    } else {
-                        alert('PROBLEM WITH REQUEST.');
-                    }
-                }
-            }
-        }
-        function addPhotoRequest(latitude, longitude){
-            httpRequest = new XMLHttpRequest();
-            httpRequest.open('POST', 'http://127.0.0.1:8080/markers/'+latitude.toString()+"/"+longitude.toString()+"/photo", true);
-            httpRequest.onreadystatechange = addPhotoHandleResponse;
-            httpRequest.send();
-            // HTTP request
-            function addPhotoHandleResponse(){
-                if (httpRequest.readyState === XMLHttpRequest.DONE) {
-                    if (httpRequest.status === 200) {
-                        response=httpRequest.response;
-                        console.log(response);
-                    } else {
-                        alert('PROBLEM WITH REQUEST.');
-                    }
-                }
+            // TODO properly handle errors
+            getMarkerByIndex(index) {
+                return Object.assign(Marker, this.markers[index]);
             }
         }
 
+        class Marker {
+            constructor(name, latitude, longitude, photo) {
+                this.name = name;
+                this.latitude = latitude;
+                this.longitude = longitude;
+                this.photo = photo;
+            }
+        }
+
+        class Photo {
+            constructor(id, fileName, description, date) {
+                this.id = id;
+                this.fileName = fileName;
+                this.description = description;
+                this.date = date;
+            }
+        }
+
+        //----------------------------------------------------------------------------//
+        // Map initialisation
+        //----------------------------------------------------------------------------//
         var mymap = L.map('mapid').setView([48.856, 2.352], 6.2);
+
+        var markerList = [];
+        var popupList = [];
+
+        var apiMarkers;
 
         L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
             attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
@@ -160,30 +71,193 @@
             accessToken: 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw'
         }).addTo(mymap);
 
-        var markerList = [];
-        var popupList = [];
-
-        function onMapClick(e) {
-            markerName = 'Temp marker';
-
-            // Create marker
-            var marker = L.marker(e.latlng, title = 'Temp name');
-            markerList.push(marker);
-            marker.addTo(mymap);
-
-            // Create popup
-            var popup = L.popup().setContent("<h3>" + markerName + "</h3><form><input type='text' name='Marker name'></form>");
-
-            popupList.push(popup);
-            marker.bindPopup(popup).openPopup();
-
-            popup.on('remove', function (e) {
-                console.log('Popup closed');
-                console.log(e);
-            });
+        //----------------------------------------------------------------------------//
+        // Callback functions
+        //----------------------------------------------------------------------------//
+        function refreshMarkers() {
+            // TODO clean existing markers
+            for (apiMarker of apiMarkers.markers) {
+                // Create marker on the map
+                var marker = L.marker(L.latLng(apiMarker.latitude, apiMarker.longitude));
+                markerList.push(marker);
+                marker.addTo(mymap);
+                // Add popup to the marker
+                var popup = L.popup().setContent("<h2>" + apiMarker.name + "</h2>");
+                popupList.push(popup);
+                marker.bindPopup(popup);
+            }
         }
 
-        mymap.on('click', onMapClick);
+        //----------------------------------------------------------------------------//
+        // API requests
+        //----------------------------------------------------------------------------//
+        // FIXME add "no-cache" header in all requests to prevent cache usage
+        function getAllMarkersRequest(callback) {
+            xhrGetAllMarkers = new XMLHttpRequest();
+
+            xhrGetAllMarkers.open('GET', API_PATH + '/markers', true);
+            xhrGetAllMarkers.responseType = "json";
+            xhrGetAllMarkers.onreadystatechange = getAllMarkersHandleResponse;
+            xhrGetAllMarkers.send();
+
+            // HTTP response handling
+            function getAllMarkersHandleResponse() {
+                if (xhrGetAllMarkers.readyState === XMLHttpRequest.DONE) {
+                    if (xhrGetAllMarkers.status === 200) {
+                        apiMarkers = Object.assign(Markers.prototype, xhrGetAllMarkers.response);
+                        callback();
+                    } else {
+                        alert('Request "getAllMarkers" failed with code ' + xhrGetAllMarkers.status.toString() + ' :(');
+                    }
+                }
+            }
+        }
+
+        function getMarkerRequest(latitude, longitude) {
+            xhrGetMarker = new XMLHttpRequest();
+
+            xhrGetMarker.open('GET', API_PATH + '/marker/' + latitude.toString() + '/' + longitude.toString(), true);
+            xhrGetMarker.responseType = "json";
+            xhrGetMarker.onreadystatechange = getMarkerHandleResponse;
+            xhrGetMarker.send();
+
+            // HTTP response handling
+            function getMarkerHandleResponse() {
+                if (xhrGetMarker.readyState === XMLHttpRequest.DONE) {
+                    if (xhrGetMarker.status === 200) {
+                        console.log(xhrGetMarker.response);
+                    } else {
+                        alert('Request "getMarker" failed with code ' + xhrGetMarker.status.toString() + ' :(');
+                    }
+                }
+            }
+        }
+
+        function addMarkerRequest() {
+            xhrAddMarker = new XMLHttpRequest();
+
+            xhrAddMarker.open('PUT', API_PATH + '/marker', true);
+            xhrAddMarker.onreadystatechange = addMarkerHandleResponse;
+            xhrAddMarker.send();
+
+            // HTTP response handling
+            function addMarkerHandleResponse() {
+                if (xhrAddMarker.readyState === XMLHttpRequest.DONE) {
+                    if (xhrAddMarker.status === 200) {
+                        // No response body expected
+                    } else {
+                        alert('Request "addMarker" failed with code ' + xhrAddMarker.status.toString() + ' :(');
+                    }
+                }
+            }
+        }
+
+        function editMarkerRequest(latitude, longitude) {
+            xhrEditMarker = new XMLHttpRequest();
+
+            xhrEditMarker.open('POST', API_PATH + '/marker/' + latitude.toString() + '/' + longitude.toString(), true);
+            xhrEditMarker.onreadystatechange = editMarkerHandleResponse;
+            xhrEditMarker.send();
+
+            // HTTP response handling
+            function editMarkerHandleResponse() {
+                if (xhrEditMarker.readyState === XMLHttpRequest.DONE) {
+                    if (xhrEditMarker.status === 200) {
+                        // No response body expected
+                    } else {
+                        alert('Request "editMarker" failed with code ' + xhrEditMarker.status.toString() + ' :(');
+                    }
+                }
+            }
+        }
+
+        function deleteMarkerRequest(latitude, longitude) {
+            xhrDeleteMarker = new XMLHttpRequest();
+
+            xhrDeleteMarker.open('DELETE', API_PATH + '/marker/' + latitude.toString() + '/' + longitude.toString(), true);
+            xhrDeleteMarker.onreadystatechange = deleteMarkerHandleResponse;
+            xhrDeleteMarker.send();
+
+            // HTTP response handling
+            function deleteMarkerHandleResponse() {
+                if (xhrDeleteMarker.readyState === XMLHttpRequest.DONE) {
+                    if (xhrDeleteMarker.status === 200) {
+                        // No response body expected
+                    } else {
+                        alert('Request "deleteMarker" failed with code ' + xhrDeleteMarker.status.toString() + ' :(');
+                    }
+                }
+            }
+        }
+
+        function addPhotoRequest(latitude, longitude) {
+            // Use "multipart-form-data" header for photo upload
+            // FIXME add content to the formData
+            formData = new FormData();
+
+            // Add file to HTTP request
+            xhrAddPhoto = new XMLHttpRequest();
+
+            xhrAddPhoto.open('POST', API_PATH + '/marker/' + latitude.toString() + '/' + longitude.toString() + '/photo', true);
+            xhrAddPhoto.onreadystatechange = addPhotoHandleResponse;
+            xhrAddPhoto.send(formData);
+
+            // HTTP response handling
+            function addPhotoHandleResponse() {
+                if (xhrAddPhoto.readyState === XMLHttpRequest.DONE) {
+                    if (xhrAddPhoto.status === 200) {
+                        // No response body expected
+                    } else {
+                        alert('Request "addPhoto" failed with code ' + xhrAddPhoto.status.toString() + ' :(');
+                    }
+                }
+            }
+        }
+
+        function editPhotoRequest(latitude, longitude, photoId) {
+            xhrEditPhoto = new XMLHttpRequest();
+
+            xhrEditPhoto.open('POST', API_PATH + '/marker/' + latitude.toString() + '/' + longitude.toString() + '/photo/' + photoId, true);
+            xhrEditPhoto.onreadystatechange = editPhotoHandleResponse;
+            xhrEditPhoto.send();
+
+            // HTTP response handling
+            function editPhotoHandleResponse() {
+                if (xhrEditPhoto.readyState === XMLHttpRequest.DONE) {
+                    if (xhrEditPhoto.status === 200) {
+                        // No response body expected
+                    } else {
+                        alert('Request "editPhoto" failed with code ' + xhrEditPhoto.status.toString() + ' :(');
+                    }
+                }
+            }
+        }
+
+        function deletePhotoRequest() {
+            xhrDeletePhoto = new XMLHttpRequest();
+
+            xhrDeletePhoto.open('DELETE', API_PATH + '/marker/' + latitude.toString() + '/' + longitude.toString() + '/photo/' + photoId, true);
+            xhrDeletePhoto.onreadystatechange = deletePhotoHandleResponse;
+            xhrDeletePhoto.send();
+
+            // HTTP response handling
+            function deletePhotoHandleResponse() {
+                if (xhrDeletePhoto.readyState === XMLHttpRequest.DONE) {
+                    if (xhrDeletePhoto.status === 200) {
+                        // No response body expected
+                    } else {
+                        alert('Request "deletePhoto" failed with code ' + xhrDeletePhoto.status.toString() + ' :(');
+                    }
+                }
+            }
+        }
+
+        //----------------------------------------------------------------------------//
+        // Web page logic
+        //----------------------------------------------------------------------------//
+        getAllMarkersRequest(refreshMarkers);
+        //getMarkerRequest(42.1337, 12.13);
+
     </script>
 </body>
 
