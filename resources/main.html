@@ -55,10 +55,10 @@
         //----------------------------------------------------------------------------//
         // Map initialisation
         //----------------------------------------------------------------------------//
-        var mymap = L.map('mapid').setView([48.856, 2.352], 6.2);
+        var leafletMap = L.map('mapid').setView([48.856, 2.352], 6.2);
 
-        var markerList = [];
-        var popupList = [];
+        var leafletMarkersList = [];
+        var leafletPopupList = [];
 
         var apiMarkers;
 
@@ -69,21 +69,27 @@
             tileSize: 512,
             zoomOffset: -1,
             accessToken: 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw'
-        }).addTo(mymap);
+        }).addTo(leafletMap);
 
         //----------------------------------------------------------------------------//
         // Callback functions
         //----------------------------------------------------------------------------//
         function refreshMarkers() {
-            // TODO clean existing markers
+            // Delete existing markers
+            for (leafletMarker of leafletMarkersList) {
+                leafletMap.removeLayer(leafletMarker);
+            }
+            leafletMarkersList = [];
+            leafletPopupList = [];
+
             for (apiMarker of apiMarkers.markers) {
                 // Create marker on the map
                 var marker = L.marker(L.latLng(apiMarker.latitude, apiMarker.longitude));
-                markerList.push(marker);
-                marker.addTo(mymap);
+                leafletMarkersList.push(marker);
+                marker.addTo(leafletMap);
                 // Add popup to the marker
                 var popup = L.popup().setContent("<h2>" + apiMarker.name + "</h2>");
-                popupList.push(popup);
+                leafletPopupList.push(popup);
                 marker.bindPopup(popup);
             }
         }
