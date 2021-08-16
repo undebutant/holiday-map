@@ -164,6 +164,8 @@ func addMarker(context *gin.Context) {
 		return
 	}
 
+	// Remove photo parameter for marker creation
+	markerData.Photos = make([]Photo, 0)
 	currentData.Markers = append(currentData.Markers, markerData)
 	writeError := setJsonData(context, currentData)
 	if writeError != nil {
