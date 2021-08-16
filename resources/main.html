@@ -21,38 +21,6 @@
         const API_PATH = 'http://127.0.0.1:8080'
 
         //----------------------------------------------------------------------------//
-        // Objects definitions
-        //----------------------------------------------------------------------------//
-        class Markers {
-            constructor(markers) {
-                this.markers = markers;
-            }
-
-            // TODO properly handle errors
-            getMarkerByIndex(index) {
-                return Object.assign(Marker, this.markers[index]);
-            }
-        }
-
-        class Marker {
-            constructor(name, latitude, longitude, photo) {
-                this.name = name;
-                this.latitude = latitude;
-                this.longitude = longitude;
-                this.photo = photo;
-            }
-        }
-
-        class Photo {
-            constructor(id, fileName, description, date) {
-                this.id = id;
-                this.fileName = fileName;
-                this.description = description;
-                this.date = date;
-            }
-        }
-
-        //----------------------------------------------------------------------------//
         // Map initialisation
         //----------------------------------------------------------------------------//
         var leafletMap = L.map('mapid').setView([48.856, 2.352], 6.2);
@@ -72,7 +40,7 @@
         }).addTo(leafletMap);
 
         //----------------------------------------------------------------------------//
-        // Callback functions
+        // Utility functions
         //----------------------------------------------------------------------------//
         function refreshMarkers() {
             // Delete existing markers
@@ -98,7 +66,7 @@
         // API requests
         //----------------------------------------------------------------------------//
         // FIXME add "no-cache" header in all requests to prevent cache usage
-        function getAllMarkersRequest(callback) {
+        function getAllMarkersRequest() {
             xhrGetAllMarkers = new XMLHttpRequest();
 
             xhrGetAllMarkers.open('GET', API_PATH + '/markers', true);
@@ -110,8 +78,8 @@
             function getAllMarkersHandleResponse() {
                 if (xhrGetAllMarkers.readyState === XMLHttpRequest.DONE) {
                     if (xhrGetAllMarkers.status === 200) {
-                        apiMarkers = Object.assign(Markers.prototype, xhrGetAllMarkers.response);
-                        callback();
+                        apiMarkers = xhrGetAllMarkers.response;
+                        refreshMarkers();
                     } else {
                         alert('Request "getAllMarkers" failed with code ' + xhrGetAllMarkers.status.toString() + ' :(');
                     }
@@ -139,18 +107,19 @@
             }
         }
 
-        function addMarkerRequest() {
+        function addMarkerRequest(callback, newMarker) {
             xhrAddMarker = new XMLHttpRequest();
 
             xhrAddMarker.open('PUT', API_PATH + '/marker', true);
+            xhrAddMarker.setRequestHeader('Content-Type', 'application/json');
             xhrAddMarker.onreadystatechange = addMarkerHandleResponse;
-            xhrAddMarker.send();
+            xhrAddMarker.send(JSON.stringify(newMarker));
 
             // HTTP response handling
             function addMarkerHandleResponse() {
                 if (xhrAddMarker.readyState === XMLHttpRequest.DONE) {
                     if (xhrAddMarker.status === 200) {
-                        // No response body expected
+                        callback();
                     } else {
                         alert('Request "addMarker" failed with code ' + xhrAddMarker.status.toString() + ' :(');
                     }
@@ -261,8 +230,9 @@
         //----------------------------------------------------------------------------//
         // Web page logic
         //----------------------------------------------------------------------------//
-        getAllMarkersRequest(refreshMarkers);
+        getAllMarkersRequest();
         //getMarkerRequest(42.1337, 12.13);
+        //addMarkerRequest(getAllMarkersRequest, {"name": "AddTest", "latitude": "44.6", "longitude": "9.04"})
 
     </script>
 </body>
