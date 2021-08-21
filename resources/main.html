@@ -10,6 +10,7 @@
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
     <!-- CSS -->
     <link rel="stylesheet" href="http://127.0.0.1:8080/static/main.css">
+    <link rel="stylesheet" href="http://127.0.0.1:8080/static/fontawesome/css/all.css">
 </head>
 
 <body>
@@ -24,9 +25,7 @@
         // Map initialisation
         //----------------------------------------------------------------------------//
         var leafletMap = L.map('mapid').setView([48.856, 2.352], 6.2);
-
         var leafletMarkersList = [];
-        var leafletPopupList = [];
 
         var apiMarkers;
 
@@ -40,6 +39,15 @@
         }).addTo(leafletMap);
 
         //----------------------------------------------------------------------------//
+        // Leaflet events
+        //----------------------------------------------------------------------------//
+        function onMapClick(event) {
+            addMarkerRequest(getAllMarkersRequest, {"latitude": event.latlng.lat.toString(), "longitude": event.latlng.lng.toString()})
+        }
+
+        leafletMap.on('click', onMapClick);
+
+        //----------------------------------------------------------------------------//
         // Utility functions
         //----------------------------------------------------------------------------//
         function refreshMarkers() {
@@ -48,7 +56,6 @@
                 leafletMap.removeLayer(leafletMarker);
             }
             leafletMarkersList = [];
-            leafletPopupList = [];
 
             for (apiMarker of apiMarkers.markers) {
                 // Create marker on the map
@@ -56,8 +63,8 @@
                 leafletMarkersList.push(marker);
                 marker.addTo(leafletMap);
                 // Add popup to the marker
-                var popup = L.popup().setContent("<h2>" + apiMarker.name + "</h2>");
-                leafletPopupList.push(popup);
+                var htmlPopup = '<h2>' + apiMarker.name + ' <i class="fas fa-cog"></i> <i class="fas fa-trash-alt"></i></h2>'
+                var popup = L.popup().setContent(htmlPopup);
                 marker.bindPopup(popup);
             }
         }
@@ -231,8 +238,6 @@
         // Web page logic
         //----------------------------------------------------------------------------//
         getAllMarkersRequest();
-        //getMarkerRequest(42.1337, 12.13);
-        //addMarkerRequest(getAllMarkersRequest, {"name": "AddTest", "latitude": "44.6", "longitude": "9.04"})
 
     </script>
 </body>

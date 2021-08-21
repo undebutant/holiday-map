@@ -130,7 +130,6 @@ func getMarkers(context *gin.Context) {
 	context.JSON(http.StatusOK, dataToSend)
 }
 
-// WARNING - latitude and longitude strings must be trimmed on client side (no unnecessary 0 at the end)
 func getMarker(context *gin.Context) {
 	data, readError := getJsonData(context)
 	if readError != nil {
@@ -393,6 +392,8 @@ func main() {
 	router.StaticFile("/", "./resources/main.html")
 	router.StaticFile("/favicon.ico", "./resources/favicon.ico")
 	router.StaticFile("/static/main.css", "./resources/main.css")
+
+	router.Static("/static/fontawesome", "./resources/fontawesome")
 
 	// Serve photos
 	router.Static("/photos", "./data/photos")
