@@ -59,15 +59,33 @@
             }
             leafletMarkersList = [];
 
+            markerIndex = 0;
             for (apiMarker of apiMarkers.markers) {
                 // Create marker on the map
                 var marker = L.marker(L.latLng(apiMarker.latitude, apiMarker.longitude));
                 leafletMarkersList.push(marker);
                 marker.addTo(leafletMap);
                 // Add popup to the marker
-                var htmlPopup = '<h2>' + apiMarker.name + ' <i class="fas fa-cog"></i> <i class="fas fa-trash-alt"></i></h2>'
+                // FIXME use JS document or similar for cleaner HTML generation
+                var htmlPopup = '<h2>' + apiMarker.name + ' <button onClick="editMarker()"><i class="fas fa-cog"></i></button> <button onClick="deleteMarkerConfirmation(' + markerIndex + ')"><i class="fas fa-trash-alt"></i></button></h2>'
                 var popup = L.popup().setContent(htmlPopup);
                 marker.bindPopup(popup);
+
+                markerIndex++;
+            }
+        }
+
+        function editMarker() {
+            console.log("Edit");
+        }
+
+        function deleteMarkerConfirmation(markerIndex) {
+            targetMarker = apiMarkers.markers[markerIndex];
+
+            isDeleting = window.confirm('Delete marker "' + targetMarker.name + '"?');
+            if (isDeleting) {
+                deleteMarkerRequest(targetMarker.latitude, targetMarker.longitude);
+                getAllMarkersRequest();
             }
         }
 
