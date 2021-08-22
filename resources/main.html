@@ -10,13 +10,19 @@
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
     <!-- CSS -->
     <link rel="stylesheet" href="http://127.0.0.1:8080/static/main.css">
+    <!-- FontAwesome -->
     <link rel="stylesheet" href="http://127.0.0.1:8080/static/fontawesome/css/all.css">
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">
 </head>
 
 <body>
     <div id="mapid"></div>
     <!-- FontAwesome free attribution -->
     <script src="http://127.0.0.1:8080/static/fontawesome/attribution.js"></script>
+    <!-- Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-U1DAWAznBHeqEIlVSCgzq+c9gqGAJn5c/t99JyeKa9xxaYpSvHU5awsuZVVFIhvj" crossorigin="anonymous"></script>
+    <!-- Custom JS -->
     <script>
         //----------------------------------------------------------------------------//
         // Consts
@@ -67,7 +73,7 @@
                 marker.addTo(leafletMap);
                 // Add popup to the marker
                 // FIXME use JS document or similar for cleaner HTML generation
-                var htmlPopup = '<h2>' + apiMarker.name + ' <button onClick="editMarker()"><i class="fas fa-cog"></i></button> <button onClick="deleteMarkerConfirmation(' + markerIndex + ')"><i class="fas fa-trash-alt"></i></button></h2>'
+                var htmlPopup = '<h2>' + apiMarker.name + ' <div class="btn-group" role="group"><button class="btn btn-warning" onClick="editMarker()"><i class="fas fa-cog"></i></button> <button class="btn btn-danger" onClick="deleteMarkerConfirmation(' + markerIndex + ')"><i class="fas fa-trash-alt"></i></button></div></h2>'
                 var popup = L.popup().setContent(htmlPopup);
                 marker.bindPopup(popup);
 
