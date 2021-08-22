@@ -65,16 +65,117 @@
             }
             leafletMarkersList = [];
 
-            markerIndex = 0;
+            var markerIndex = 0;
             for (apiMarker of apiMarkers.markers) {
                 // Create marker on the map
                 var marker = L.marker(L.latLng(apiMarker.latitude, apiMarker.longitude));
                 leafletMarkersList.push(marker);
                 marker.addTo(leafletMap);
-                // Add popup to the marker
-                // FIXME use JS document or similar for cleaner HTML generation
-                var htmlPopup = '<h2>' + apiMarker.name + ' <div class="btn-group" role="group"><button class="btn btn-warning" onClick="editMarker()"><i class="fas fa-cog"></i></button> <button class="btn btn-danger" onClick="deleteMarkerConfirmation(' + markerIndex + ')"><i class="fas fa-trash-alt"></i></button></div></h2>'
-                var popup = L.popup().setContent(htmlPopup);
+
+                // Generate custom popup content for each marker
+                // FIXME clean code and move to dedicated functions
+                var popupContent = document.createElement('div');
+
+                // Marker title
+                var markerTitle = document.createElement('h3');
+                markerTitle.textContent = apiMarker.name + ' ';
+
+                // Button group div
+                var buttonDiv = document.createElement('div');
+                buttonDiv.setAttribute('class', 'btn-group');
+                buttonDiv.setAttribute('role', 'group');
+
+                // Edit button
+                var editButton = document.createElement('button');
+                editButton.setAttribute('class', 'btn btn-warning');
+                editButton.setAttribute('onClick', 'editMarker()');
+                var editIcon = document.createElement('i');
+                editIcon.setAttribute('class', 'fas fa-cog');
+                editButton.append(editIcon);
+
+                // Delete button
+                var deleteButton = document.createElement('button');
+                deleteButton.setAttribute('class', 'btn btn-danger');
+                deleteButton.setAttribute('onClick', 'deleteMarkerConfirmation(' + markerIndex + ')');
+                var deleteIcon = document.createElement('i');
+                deleteIcon.setAttribute('class', 'fas fa-trash-alt');
+                deleteButton.append(deleteIcon);
+
+                // Carousel
+                var carouselOuterDiv = document.createElement('div');
+                carouselOuterDiv.setAttribute('id', 'carousel_' + apiMarker.name);
+                carouselOuterDiv.setAttribute('class', 'carousel slide');
+                carouselOuterDiv.setAttribute('data-bs-ride', 'carousel');
+
+                var carouselInnerDiv = document.createElement('div');
+                carouselInnerDiv.setAttribute('class', 'carousel-inner');
+
+                for (photo of apiMarker.photos) {
+                    var carouselItemDiv = document.createElement('div');
+                    carouselItemDiv.setAttribute('class', 'carousel-item active');
+
+                    var carouselItemImg = document.createElement('img');
+                    carouselItemImg.setAttribute('src', API_PATH + '/photos/' + photo.fileName);
+                    carouselItemImg.setAttribute('class', 'd-block w-100');
+                    carouselItemImg.setAttribute('alt', photo.fileName);
+
+                    carouselItemDiv.append(carouselItemImg);
+                    carouselInnerDiv.append(carouselItemDiv);
+                }
+
+                carouselOuterDiv.append(carouselInnerDiv);
+
+                var carouselButtonPrevious = document.createElement('button');
+                carouselButtonPrevious.setAttribute('class', 'carousel-control-prev');
+                carouselButtonPrevious.setAttribute('type', 'button');
+                carouselButtonPrevious.setAttribute('data-bs-target', '#' + 'carousel_' + apiMarker.name);
+                carouselButtonPrevious.setAttribute('data-bs-slide', 'prev');
+
+                var carouselButtonPreviousSpanIcon = document.createElement('span');
+                carouselButtonPreviousSpanIcon.setAttribute('class', 'carousel-control-prev-icon');
+                carouselButtonPreviousSpanIcon.setAttribute('aria-hidden', 'true');
+
+                var carouselButtonPreviousSpanText = document.createElement('span');
+                carouselButtonPreviousSpanText.setAttribute('class', 'visually-hidden');
+                carouselButtonPreviousSpanText.textContent = 'Previous';
+
+                carouselButtonPrevious.append(carouselButtonPreviousSpanIcon);
+                carouselButtonPrevious.append(carouselButtonPreviousSpanText);
+
+                var carouselButtonNext = document.createElement('button');
+                carouselButtonNext.setAttribute('class', 'carousel-control-next');
+                carouselButtonNext.setAttribute('type', 'button');
+                carouselButtonNext.setAttribute('data-bs-target', '#' + 'carousel_' + apiMarker.name);
+                carouselButtonNext.setAttribute('data-bs-slide', 'next');
+
+                var carouselButtonNextSpanIcon = document.createElement('span');
+                carouselButtonNextSpanIcon.setAttribute('class', 'carousel-control-next-icon');
+                carouselButtonNextSpanIcon.setAttribute('aria-hidden', 'true');
+
+                var carouselButtonNextSpanText = document.createElement('span');
+                carouselButtonNextSpanText.setAttribute('class', 'visually-hidden');
+                carouselButtonNextSpanText.textContent = 'Next';
+
+                carouselButtonNext.append(carouselButtonNextSpanIcon);
+                carouselButtonNext.append(carouselButtonNextSpanText);
+
+                carouselOuterDiv.append(carouselButtonPrevious);
+                carouselOuterDiv.append(carouselButtonNext);
+
+                // APPEND ALL THE THINGS
+                buttonDiv.append(editButton);
+                buttonDiv.append(deleteButton);
+                markerTitle.append(buttonDiv);
+
+                popupContent.append(markerTitle);
+                popupContent.append(carouselOuterDiv);
+
+                // Create document fragment and append "popupContent" div
+                var popupFragment = document.createDocumentFragment();
+                popupFragment.appendChild(popupContent);
+
+                //var htmlPopup = '<h2>' + apiMarker.name + ' <div class="btn-group" role="group"><button class="btn btn-warning" onClick="editMarker()"><i class="fas fa-cog"></i></button> <button class="btn btn-danger" onClick="deleteMarkerConfirmation(' + markerIndex + ')"><i class="fas fa-trash-alt"></i></button></div></h2>'
+                var popup = L.popup().setContent(popupFragment);
                 marker.bindPopup(popup);
 
                 markerIndex++;

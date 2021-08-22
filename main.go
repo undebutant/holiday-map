@@ -116,18 +116,21 @@ func getMarkers(context *gin.Context) {
 		return
 	}
 
-	// Remove photos and photoCount from response
-	var dataToSend MinimalMarkers
-	for _, marker := range data.Markers {
-		var minimalMarker MinimalMarker
-		minimalMarker.Name = marker.Name
-		minimalMarker.Latitude = marker.Latitude
-		minimalMarker.Longitude = marker.Longitude
+	/*
+		// Remove photos and photoCount from response
+		var dataToSend MinimalMarkers
+		for _, marker := range data.Markers {
+			var minimalMarker MinimalMarker
+			minimalMarker.Name = marker.Name
+			minimalMarker.Latitude = marker.Latitude
+			minimalMarker.Longitude = marker.Longitude
 
-		dataToSend.Markers = append(dataToSend.Markers, minimalMarker)
-	}
+			dataToSend.Markers = append(dataToSend.Markers, minimalMarker)
+		}
 
-	context.JSON(http.StatusOK, dataToSend)
+		context.JSON(http.StatusOK, dataToSend)
+	*/
+	context.JSON(http.StatusOK, data)
 }
 
 func getMarker(context *gin.Context) {
