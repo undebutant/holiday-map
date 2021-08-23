@@ -198,7 +198,7 @@
 
             isDeleting = window.confirm('Delete marker "' + targetMarker.name + '"?');
             if (isDeleting) {
-                deleteMarkerRequest(targetMarker.latitude, targetMarker.longitude);
+                deleteMarkerRequest(getAllMarkersRequest,targetMarker.latitude, targetMarker.longitude);
                 getAllMarkersRequest();
             }
         }
@@ -287,7 +287,7 @@
             }
         }
 
-        function deleteMarkerRequest(latitude, longitude) {
+        function deleteMarkerRequest(callback,latitude, longitude) {
             xhrDeleteMarker = new XMLHttpRequest();
 
             xhrDeleteMarker.open('DELETE', API_PATH + '/marker/' + latitude.toString() + '/' + longitude.toString(), true);
@@ -298,7 +298,7 @@
             function deleteMarkerHandleResponse() {
                 if (xhrDeleteMarker.readyState === XMLHttpRequest.DONE) {
                     if (xhrDeleteMarker.status === 200) {
-                        // No response body expected
+                        callback();
                     } else {
                         alert('Request "deleteMarker" failed with code ' + xhrDeleteMarker.status.toString() + ' :(');
                     }
