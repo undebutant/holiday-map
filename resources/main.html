@@ -58,6 +58,131 @@
         //----------------------------------------------------------------------------//
         // Utility functions
         //----------------------------------------------------------------------------//
+
+        // function to set classic attributes to an element
+        // Attributes must be set through a array of JS objects of form {'key''keyname','value','valuename'}
+        // Unuses attributes must be set to ""
+        function setAttributes(element, attributes){
+            for( attribute of attributes){
+                element.setAttribute(attribute.key, attribute.value);
+            }
+        }
+
+        function createButtonElement(idAttribute, classAttribute, roleAttribute, onClickAttribute){
+            var button=document.createElement("button");
+            button.setAttribute('class',classAttribute);
+            button.setAttribute('id',idAttribute);
+            button.setAttribute('role',roleAttribute);
+            button.setAttribute('onClick',onClickAttribute);
+            return button;
+
+        }
+
+        function createIconElement(idAttribute,classAttribute){
+            var icon=document.createElement('i');
+            icon.setAttribute('id',idAttribute);
+            icon.setAttribute('class',classAttribute);
+            return icon;
+
+        }
+
+        function createTitleAndButtonsElement(apiMarker, markerIndex){
+
+            var markerTitle = document.createElement('h3');
+            markerTitle.textContent = apiMarker.name + ' ';
+
+            // Button group div
+            var buttonDiv = document.createElement('div');
+            setAttributes(buttonDiv,[{'key':'class','value':'btn-group'},{'key':'role','value':'group'}]);
+
+            // Edit button
+            var editButton = createButtonElement('','btn btn-warning','','editMarker()');
+            var editIcon = createIconElement('','fas fa-cog');
+            editButton.append(editIcon);
+
+            // Delete button
+            var deleteButton = createButtonElement('','btn btn-danger','','deleteMarkerConfirmation('+markerIndex+')');
+            var deleteIcon = createIconElement('','fas fa-trash-alt');
+            deleteButton.append(deleteIcon);
+          
+            // APPEND ALL THE THINGS
+            buttonDiv.append(editButton);
+            buttonDiv.append(deleteButton);
+            markerTitle.append(buttonDiv);
+
+            return markerTitle;
+        }
+
+        function createCarrouselElement(apiMarker){
+            var carouselOuterDiv = document.createElement('div');
+            carouselOuterDiv.setAttribute('id', 'carousel_' + apiMarker.name);
+            carouselOuterDiv.setAttribute('class', 'carousel slide');
+            carouselOuterDiv.setAttribute('data-bs-ride', 'carousel');
+
+            var carouselInnerDiv = document.createElement('div');
+            carouselInnerDiv.setAttribute('class', 'carousel-inner');
+
+            var isFirst = true;
+            for (photo of apiMarker.photos) {
+                var carouselItemDiv = document.createElement('div');
+                if (isFirst){
+                    carouselItemDiv.setAttribute('class', 'carousel-item active');
+                    isFirst=false;
+                }
+                else{
+                    carouselItemDiv.setAttribute('class', 'carousel-item');
+                    isFirst=false; 
+                }
+                var carouselItemImg = document.createElement('img');
+                carouselItemImg.setAttribute('src', API_PATH + '/photos/' + photo.fileName);
+                carouselItemImg.setAttribute('class', 'd-block w-100');
+                carouselItemImg.setAttribute('alt', photo.fileName);
+
+                carouselItemDiv.append(carouselItemImg);
+                carouselInnerDiv.append(carouselItemDiv);
+            }
+
+            carouselOuterDiv.append(carouselInnerDiv);
+
+            var carouselButtonPrevious = document.createElement('button');
+            carouselButtonPrevious.setAttribute('class', 'carousel-control-prev');
+            carouselButtonPrevious.setAttribute('type', 'button');
+            carouselButtonPrevious.setAttribute('data-bs-target', '#' + 'carousel_' + apiMarker.name);
+            carouselButtonPrevious.setAttribute('data-bs-slide', 'prev');
+
+            var carouselButtonPreviousSpanIcon = document.createElement('span');
+            carouselButtonPreviousSpanIcon.setAttribute('class', 'carousel-control-prev-icon');
+            carouselButtonPreviousSpanIcon.setAttribute('aria-hidden', 'true');
+
+            var carouselButtonPreviousSpanText = document.createElement('span');
+            carouselButtonPreviousSpanText.setAttribute('class', 'visually-hidden');
+            carouselButtonPreviousSpanText.textContent = 'Previous';
+
+            carouselButtonPrevious.append(carouselButtonPreviousSpanIcon);
+            carouselButtonPrevious.append(carouselButtonPreviousSpanText);
+
+            var carouselButtonNext = document.createElement('button');
+            carouselButtonNext.setAttribute('class', 'carousel-control-next');
+            carouselButtonNext.setAttribute('type', 'button');
+            carouselButtonNext.setAttribute('data-bs-target', '#' + 'carousel_' + apiMarker.name);
+            carouselButtonNext.setAttribute('data-bs-slide', 'next');
+
+            var carouselButtonNextSpanIcon = document.createElement('span');
+            carouselButtonNextSpanIcon.setAttribute('class', 'carousel-control-next-icon');
+            carouselButtonNextSpanIcon.setAttribute('aria-hidden', 'true');
+
+            var carouselButtonNextSpanText = document.createElement('span');
+            carouselButtonNextSpanText.setAttribute('class', 'visually-hidden');
+            carouselButtonNextSpanText.textContent = 'Next';
+
+            carouselButtonNext.append(carouselButtonNextSpanIcon);
+            carouselButtonNext.append(carouselButtonNextSpanText);
+
+            carouselOuterDiv.append(carouselButtonPrevious);
+            carouselOuterDiv.append(carouselButtonNext);
+            return carouselOuterDiv;
+        }
+
         function refreshMarkers() {
             // Delete existing markers
             for (leafletMarker of leafletMarkersList) {
@@ -73,117 +198,15 @@
                 marker.addTo(leafletMap);
 
                 // Generate custom popup content for each marker
-                // FIXME clean code and move to dedicated functions
                 var popupContent = document.createElement('div');
-
-                // Marker title
-                var markerTitle = document.createElement('h3');
-                markerTitle.textContent = apiMarker.name + ' ';
-
-                // Button group div
-                var buttonDiv = document.createElement('div');
-                buttonDiv.setAttribute('class', 'btn-group');
-                buttonDiv.setAttribute('role', 'group');
-
-                // Edit button
-                var editButton = document.createElement('button');
-                editButton.setAttribute('class', 'btn btn-warning');
-                editButton.setAttribute('onClick', 'editMarker()');
-                var editIcon = document.createElement('i');
-                editIcon.setAttribute('class', 'fas fa-cog');
-                editButton.append(editIcon);
-
-                // Delete button
-                var deleteButton = document.createElement('button');
-                deleteButton.setAttribute('class', 'btn btn-danger');
-                deleteButton.setAttribute('onClick', 'deleteMarkerConfirmation(' + markerIndex + ')');
-                var deleteIcon = document.createElement('i');
-                deleteIcon.setAttribute('class', 'fas fa-trash-alt');
-                deleteButton.append(deleteIcon);
-
-                // Carousel
-                var carouselOuterDiv = document.createElement('div');
-                carouselOuterDiv.setAttribute('id', 'carousel_' + apiMarker.name);
-                carouselOuterDiv.setAttribute('class', 'carousel slide');
-                carouselOuterDiv.setAttribute('data-bs-ride', 'carousel');
-
-                var carouselInnerDiv = document.createElement('div');
-                carouselInnerDiv.setAttribute('class', 'carousel-inner');
-
-                var isFirst = true;
-                for (photo of apiMarker.photos) {
-                    var carouselItemDiv = document.createElement('div');
-                    if (isFirst){
-                        carouselItemDiv.setAttribute('class', 'carousel-item active');
-                        isFirst=false;
-                    }
-                    else{
-                        carouselItemDiv.setAttribute('class', 'carousel-item');
-                        isFirst=false; 
-                    }
-                    var carouselItemImg = document.createElement('img');
-                    carouselItemImg.setAttribute('src', API_PATH + '/photos/' + photo.fileName);
-                    carouselItemImg.setAttribute('class', 'd-block w-100');
-                    carouselItemImg.setAttribute('alt', photo.fileName);
-
-                    carouselItemDiv.append(carouselItemImg);
-                    carouselInnerDiv.append(carouselItemDiv);
-                }
-
-                carouselOuterDiv.append(carouselInnerDiv);
-
-                var carouselButtonPrevious = document.createElement('button');
-                carouselButtonPrevious.setAttribute('class', 'carousel-control-prev');
-                carouselButtonPrevious.setAttribute('type', 'button');
-                carouselButtonPrevious.setAttribute('data-bs-target', '#' + 'carousel_' + apiMarker.name);
-                carouselButtonPrevious.setAttribute('data-bs-slide', 'prev');
-
-                var carouselButtonPreviousSpanIcon = document.createElement('span');
-                carouselButtonPreviousSpanIcon.setAttribute('class', 'carousel-control-prev-icon');
-                carouselButtonPreviousSpanIcon.setAttribute('aria-hidden', 'true');
-
-                var carouselButtonPreviousSpanText = document.createElement('span');
-                carouselButtonPreviousSpanText.setAttribute('class', 'visually-hidden');
-                carouselButtonPreviousSpanText.textContent = 'Previous';
-
-                carouselButtonPrevious.append(carouselButtonPreviousSpanIcon);
-                carouselButtonPrevious.append(carouselButtonPreviousSpanText);
-
-                var carouselButtonNext = document.createElement('button');
-                carouselButtonNext.setAttribute('class', 'carousel-control-next');
-                carouselButtonNext.setAttribute('type', 'button');
-                carouselButtonNext.setAttribute('data-bs-target', '#' + 'carousel_' + apiMarker.name);
-                carouselButtonNext.setAttribute('data-bs-slide', 'next');
-
-                var carouselButtonNextSpanIcon = document.createElement('span');
-                carouselButtonNextSpanIcon.setAttribute('class', 'carousel-control-next-icon');
-                carouselButtonNextSpanIcon.setAttribute('aria-hidden', 'true');
-
-                var carouselButtonNextSpanText = document.createElement('span');
-                carouselButtonNextSpanText.setAttribute('class', 'visually-hidden');
-                carouselButtonNextSpanText.textContent = 'Next';
-
-                carouselButtonNext.append(carouselButtonNextSpanIcon);
-                carouselButtonNext.append(carouselButtonNextSpanText);
-
-                carouselOuterDiv.append(carouselButtonPrevious);
-                carouselOuterDiv.append(carouselButtonNext);
-
-                // APPEND ALL THE THINGS
-                buttonDiv.append(editButton);
-                buttonDiv.append(deleteButton);
-                markerTitle.append(buttonDiv);
-
-                popupContent.append(markerTitle);
-                popupContent.append(carouselOuterDiv);
+                popupContent.append(createTitleAndButtonsElement(apiMarker, markerIndex));
+                popupContent.append(createCarrouselElement(apiMarker));
 
                 // Create document fragment and append "popupContent" div
                 var popupFragment = document.createDocumentFragment();
                 popupFragment.appendChild(popupContent);
-                console.log(popupFragment);
-
                 var popup = L.popup().setContent(popupFragment);
-                marker.bindPopup(popup);
+                marker.bindPopup(popup, {minWidth:300, maxHeight:600} );
 
                 markerIndex++;
             }
