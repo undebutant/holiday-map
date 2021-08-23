@@ -36,7 +36,7 @@
         var leafletMarkersList = [];
 
         var apiMarkers;
-        
+
         L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
             attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
             maxZoom: 18,
@@ -59,23 +59,29 @@
         // Utility functions
         //----------------------------------------------------------------------------//
 
-        // function to set classic attributes to an element
-        // Attributes must be set through a array of JS objects of form {'key''keyname','value','valuename'}
-        // Unuses attributes must be set to ""
+        // Function to set attributes to an element
+        // Attributes must be set through an array of JS objects like {'key': 'keyname','value': 'valuename'}
         function setAttributes(element, attributes){
             for( attribute of attributes){
                 element.setAttribute(attribute.key, attribute.value);
             }
         }
 
-        function createButtonElement(idAttribute, classAttribute, roleAttribute, onClickAttribute){
+        function createButtonElement(idAttribute, classAttribute, roleAttribute, onClickAttribute, tooltipText = ''){
             var button=document.createElement("button");
-            button.setAttribute('class',classAttribute);
-            button.setAttribute('id',idAttribute);
-            button.setAttribute('role',roleAttribute);
-            button.setAttribute('onClick',onClickAttribute);
-            return button;
+            button.setAttribute('type', 'button');
+            button.setAttribute('class', classAttribute);
+            button.setAttribute('id', idAttribute);
+            button.setAttribute('role', roleAttribute);
+            button.setAttribute('onClick', onClickAttribute);
 
+            if (tooltipText) {
+                button.setAttribute('data-bs-toggle', 'tooltip');
+                button.setAttribute('data-bs-placement', 'top');
+                button.setAttribute('title', tooltipText);
+            }
+
+            return button;
         }
 
         function createIconElement(idAttribute,classAttribute){
@@ -87,30 +93,43 @@
         }
 
         function createTitleAndButtonsElement(apiMarker, markerIndex){
+            var markerTitleDiv = document.createElement('div');
 
             var markerTitle = document.createElement('h3');
+            markerTitle.setAttribute('id', 'title_' + markerIndex);
             markerTitle.textContent = apiMarker.name + ' ';
+            markerTitleDiv.append(markerTitle);
+
+            var markerNameForm = createMarkerNameForm(markerIndex, apiMarker.name);
+            markerNameForm.hidden = true;
+            markerTitleDiv.append(markerNameForm);
 
             // Button group div
             var buttonDiv = document.createElement('div');
             setAttributes(buttonDiv,[{'key':'class','value':'btn-group'},{'key':'role','value':'group'}]);
 
+            // Move marker button
+            var moveButton = createButtonElement('', 'btn btn-primary', '', 'moveMarker()', 'Move marker');
+            var moveIcon = createIconElement('', 'fas fa-arrows-alt');
+            moveButton.append(moveIcon);
+
             // Edit button
-            var editButton = createButtonElement('','btn btn-warning','','editMarker()');
-            var editIcon = createIconElement('','fas fa-cog');
+            var editButton = createButtonElement('', 'btn btn-warning', '', 'switchMarkerTitleMode(' + markerIndex + ')', 'Edit marker');
+            var editIcon = createIconElement('', 'fas fa-cog');
             editButton.append(editIcon);
 
             // Delete button
-            var deleteButton = createButtonElement('','btn btn-danger','','deleteMarkerConfirmation('+markerIndex+')');
-            var deleteIcon = createIconElement('','fas fa-trash-alt');
+            var deleteButton = createButtonElement('', 'btn btn-danger', '', 'deleteMarkerConfirmation('+markerIndex+')', 'Delete marker');
+            var deleteIcon = createIconElement('', 'fas fa-trash-alt');
             deleteButton.append(deleteIcon);
-          
+
             // APPEND ALL THE THINGS
+            buttonDiv.append(moveButton);
             buttonDiv.append(editButton);
             buttonDiv.append(deleteButton);
-            markerTitle.append(buttonDiv);
+            markerTitleDiv.append(buttonDiv);
 
-            return markerTitle;
+            return markerTitleDiv;
         }
 
         function createCarrouselElement(apiMarker){
@@ -131,7 +150,7 @@
                 }
                 else{
                     carouselItemDiv.setAttribute('class', 'carousel-item');
-                    isFirst=false; 
+                    isFirst=false;
                 }
                 var carouselItemImg = document.createElement('img');
                 carouselItemImg.setAttribute('src', API_PATH + '/photos/' + photo.fileName);
@@ -183,6 +202,30 @@
             return carouselOuterDiv;
         }
 
+        function createMarkerNameForm(markerIndex, markerName) {
+            var markerNameForm = document.createElement('form');
+            markerNameForm.setAttribute('id', 'nameForm_' + markerIndex);
+            markerNameForm.setAttribute('class', 'row row-cols-lg-auto g-3 align-items-center');
+            markerNameForm.setAttribute('onsubmit', 'return false');
+
+            var htmlMarkerNameForm = `
+            <div class="col-12">
+                <label class="visually-hidden" for="inlineFormInputMarkerName">Marker name</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="inlineFormInputMarkerName" value="` + markerName + `">
+                </div>
+            </div>
+
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary" onClick="editMarkerName(` + markerIndex + `, 'inlineFormInputMarkerName')">Valider</button>
+            </div>
+            `;
+
+            markerNameForm.innerHTML = htmlMarkerNameForm;
+
+            return markerNameForm;
+        }
+
         function refreshMarkers() {
             // Delete existing markers
             for (leafletMarker of leafletMarkersList) {
@@ -212,8 +255,23 @@
             }
         }
 
-        function editMarker() {
-            console.log("Edit");
+        function editMarkerName(markerIndex, formId) {
+            var newName = document.getElementById(formId).value;
+            apiMarkers.markers[markerIndex].name = newName;
+
+            editMarkerRequest(apiMarkers.markers[markerIndex]);
+        }
+
+        function moveMarker() {
+            console.log("Move");
+        }
+
+        function switchMarkerTitleMode(markerIndex) {
+            var markerTitle = document.getElementById('title_' + markerIndex);
+            markerTitle.hidden = !markerTitle.hidden;
+
+            var markerNameForm = document.getElementById('nameForm_' + markerIndex);
+            markerNameForm.hidden = !markerNameForm.hidden;
         }
 
         function deleteMarkerConfirmation(markerIndex) {
@@ -291,18 +349,18 @@
             }
         }
 
-        function editMarkerRequest(latitude, longitude) {
+        function editMarkerRequest(marker) {
             xhrEditMarker = new XMLHttpRequest();
 
-            xhrEditMarker.open('POST', API_PATH + '/marker/' + latitude.toString() + '/' + longitude.toString(), true);
+            xhrEditMarker.open('POST', API_PATH + '/marker/' + marker.latitude.toString() + '/' + marker.longitude.toString(), true);
             xhrEditMarker.onreadystatechange = editMarkerHandleResponse;
-            xhrEditMarker.send();
+            xhrEditMarker.send(JSON.stringify(marker));
 
             // HTTP response handling
             function editMarkerHandleResponse() {
                 if (xhrEditMarker.readyState === XMLHttpRequest.DONE) {
                     if (xhrEditMarker.status === 200) {
-                        // No response body expected
+                        refreshMarkers();
                     } else {
                         alert('Request "editMarker" failed with code ' + xhrEditMarker.status.toString() + ' :(');
                     }
