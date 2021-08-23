@@ -36,7 +36,7 @@
         var leafletMarkersList = [];
 
         var apiMarkers;
-
+        
         L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
             attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
             maxZoom: 18,
@@ -110,10 +110,17 @@
                 var carouselInnerDiv = document.createElement('div');
                 carouselInnerDiv.setAttribute('class', 'carousel-inner');
 
+                var isFirst = true;
                 for (photo of apiMarker.photos) {
                     var carouselItemDiv = document.createElement('div');
-                    carouselItemDiv.setAttribute('class', 'carousel-item active');
-
+                    if (isFirst){
+                        carouselItemDiv.setAttribute('class', 'carousel-item active');
+                        isFirst=false;
+                    }
+                    else{
+                        carouselItemDiv.setAttribute('class', 'carousel-item');
+                        isFirst=false; 
+                    }
                     var carouselItemImg = document.createElement('img');
                     carouselItemImg.setAttribute('src', API_PATH + '/photos/' + photo.fileName);
                     carouselItemImg.setAttribute('class', 'd-block w-100');
@@ -173,8 +180,8 @@
                 // Create document fragment and append "popupContent" div
                 var popupFragment = document.createDocumentFragment();
                 popupFragment.appendChild(popupContent);
+                console.log(popupFragment);
 
-                //var htmlPopup = '<h2>' + apiMarker.name + ' <div class="btn-group" role="group"><button class="btn btn-warning" onClick="editMarker()"><i class="fas fa-cog"></i></button> <button class="btn btn-danger" onClick="deleteMarkerConfirmation(' + markerIndex + ')"><i class="fas fa-trash-alt"></i></button></div></h2>'
                 var popup = L.popup().setContent(popupFragment);
                 marker.bindPopup(popup);
 
