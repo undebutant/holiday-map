@@ -35,6 +35,8 @@
         var leafletMap = L.map('mapid').setView([48.856, 2.352], 6.2);
         var leafletMarkersList = [];
 
+        var movingMarker=undefined;
+
         var apiMarkers;
 
         L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
@@ -50,10 +52,24 @@
         // Leaflet events
         //----------------------------------------------------------------------------//
         function onMapClick(event) {
-            addMarkerRequest(getAllMarkersRequest, {"latitude": event.latlng.lat.toString(), "longitude": event.latlng.lng.toString()})
+            if (movingMarker){
+                moveMarkerRequest(movingMarker,event.latlng.lat.toString(), event.latlng.lng.toString());
+                movingMarker=undefined;
+            }
+            else{
+                addMarkerRequest(getAllMarkersRequest, {"latitude": event.latlng.lat.toString(), "longitude": event.latlng.lng.toString()});
+            }
+            
         }
 
-        leafletMap.on('click', onMapClick);
+        //User interactions on map
+
+        //disables zoom on double click
+        leafletMap.doubleClickZoom.disable();
+        //handles double click
+        leafletMap.on('dblclick', onMapClick);
+        //Cancels moving on right click
+        leafletMap.on('contextmenu', function(e) { movingMarker=undefined;});
 
         //----------------------------------------------------------------------------//
         // Utility functions
@@ -109,7 +125,7 @@
             setAttributes(buttonDiv,[{'key':'class','value':'btn-group'},{'key':'role','value':'group'}]);
 
             // Move marker button
-            var moveButton = createButtonElement('', 'btn btn-primary', '', 'moveMarker()', 'Move marker');
+            var moveButton = createButtonElement('', 'btn btn-primary', '', 'moveMarker(' + markerIndex + ')', 'Move marker');
             var moveIcon = createIconElement('', 'fas fa-arrows-alt');
             moveButton.append(moveIcon);
 
@@ -262,8 +278,9 @@
             editMarkerRequest(apiMarkers.markers[markerIndex]);
         }
 
-        function moveMarker() {
-            console.log("Move");
+        function moveMarker(markerIndex) {
+            movingMarker=apiMarkers.markers[markerIndex];
+            leafletMap.closePopup();
         }
 
         function switchMarkerTitleMode(markerIndex) {
@@ -349,7 +366,29 @@
             }
         }
 
-        function editMarkerRequest(marker) {
+        function moveMarkerRequest(marker, newLat, newLong) {
+            xhrMoveMarker = new XMLHttpRequest();
+
+            xhrMoveMarker.open('POST', API_PATH + '/marker/' + marker.latitude.toString() + '/' + marker.longitude.toString(), true);
+            marker.latitude=newLat;
+            marker.longitude=newLong;
+            xhrMoveMarker.onreadystatechange = editMarkerHandleResponse;
+            xhrMoveMarker.send(JSON.stringify(marker));
+
+            // HTTP response handling
+            function editMarkerHandleResponse() {
+                if (xhrMoveMarker.readyState === XMLHttpRequest.DONE) {
+                    if (xhrMoveMarker.status === 200) {
+                        refreshMarkers();
+
+                    } else {
+                        alert('Request "editMarker" failed with code ' + xhrMoveMarker.status.toString() + ' :(');
+                    }
+                }
+            }
+        }
+
+        function editMarkerRequest(marker, isMoving=false) {
             xhrEditMarker = new XMLHttpRequest();
 
             xhrEditMarker.open('POST', API_PATH + '/marker/' + marker.latitude.toString() + '/' + marker.longitude.toString(), true);
@@ -361,6 +400,7 @@
                 if (xhrEditMarker.readyState === XMLHttpRequest.DONE) {
                     if (xhrEditMarker.status === 200) {
                         refreshMarkers();
+
                     } else {
                         alert('Request "editMarker" failed with code ' + xhrEditMarker.status.toString() + ' :(');
                     }
