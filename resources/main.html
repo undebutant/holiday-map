@@ -32,12 +32,11 @@
         //----------------------------------------------------------------------------//
         // Map initialisation
         //----------------------------------------------------------------------------//
-        var leafletMap = L.map('mapid').setView([48.856, 2.352], 6.2);
-        var leafletMarkersList = [];
+        leafletMap = L.map('mapid').setView([48.856, 2.352], 6.2);
+        leafletMarkersList = [];
 
-        var movingMarker=undefined;
-
-        var apiMarkers;
+        movingMarker = undefined;
+        apiMarkers = [];
 
         L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
             attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
@@ -54,12 +53,12 @@
         function onMapClick(event) {
             if (movingMarker){
                 moveMarkerRequest(movingMarker,event.latlng.lat.toString(), event.latlng.lng.toString());
-                movingMarker=undefined;
+                movingMarker = undefined;
             }
             else{
                 addMarkerRequest(getAllMarkersRequest, {"latitude": event.latlng.lat.toString(), "longitude": event.latlng.lng.toString()});
             }
-            
+
         }
 
         //User interactions on map
@@ -84,7 +83,7 @@
         }
 
         function createButtonElement(idAttribute, classAttribute, roleAttribute, onClickAttribute, tooltipText = ''){
-            var button=document.createElement("button");
+            let button = document.createElement("button");
             button.setAttribute('type', 'button');
             button.setAttribute('class', classAttribute);
             button.setAttribute('id', idAttribute);
@@ -101,42 +100,42 @@
         }
 
         function createIconElement(idAttribute,classAttribute){
-            var icon=document.createElement('i');
+            let icon = document.createElement('i');
             icon.setAttribute('id',idAttribute);
             icon.setAttribute('class',classAttribute);
-            return icon;
 
+            return icon;
         }
 
         function createTitleAndButtonsElement(apiMarker, markerIndex){
-            var markerTitleDiv = document.createElement('div');
+            let markerTitleDiv = document.createElement('div');
 
-            var markerTitle = document.createElement('h3');
+            let markerTitle = document.createElement('h3');
             markerTitle.setAttribute('id', 'title_' + markerIndex);
             markerTitle.textContent = apiMarker.name + ' ';
             markerTitleDiv.append(markerTitle);
 
-            var markerNameForm = createMarkerNameForm(markerIndex, apiMarker.name);
+            let markerNameForm = createMarkerNameForm(markerIndex, apiMarker.name);
             markerNameForm.hidden = true;
             markerTitleDiv.append(markerNameForm);
 
             // Button group div
-            var buttonDiv = document.createElement('div');
+            let buttonDiv = document.createElement('div');
             setAttributes(buttonDiv,[{'key':'class','value':'btn-group'},{'key':'role','value':'group'}]);
 
             // Move marker button
-            var moveButton = createButtonElement('', 'btn btn-primary', '', 'moveMarker(' + markerIndex + ')', 'Move marker');
-            var moveIcon = createIconElement('', 'fas fa-arrows-alt');
+            let moveButton = createButtonElement('', 'btn btn-primary', '', 'moveMarker(' + markerIndex + ')', 'Move marker');
+            let moveIcon = createIconElement('', 'fas fa-arrows-alt');
             moveButton.append(moveIcon);
 
             // Edit button
-            var editButton = createButtonElement('', 'btn btn-warning', '', 'switchMarkerTitleMode(' + markerIndex + ')', 'Edit marker');
-            var editIcon = createIconElement('', 'fas fa-cog');
+            let editButton = createButtonElement('', 'btn btn-warning', '', 'switchMarkerTitleMode(' + markerIndex + ')', 'Edit marker');
+            let editIcon = createIconElement('', 'fas fa-cog');
             editButton.append(editIcon);
 
             // Delete button
-            var deleteButton = createButtonElement('', 'btn btn-danger', '', 'deleteMarkerConfirmation('+markerIndex+')', 'Delete marker');
-            var deleteIcon = createIconElement('', 'fas fa-trash-alt');
+            let deleteButton = createButtonElement('', 'btn btn-danger', '', 'deleteMarkerConfirmation('+markerIndex+')', 'Delete marker');
+            let deleteIcon = createIconElement('', 'fas fa-trash-alt');
             deleteButton.append(deleteIcon);
 
             // APPEND ALL THE THINGS
@@ -149,26 +148,27 @@
         }
 
         function createCarrouselElement(apiMarker){
-            var carouselOuterDiv = document.createElement('div');
+            let carouselOuterDiv = document.createElement('div');
             carouselOuterDiv.setAttribute('id', 'carousel_' + apiMarker.name);
             carouselOuterDiv.setAttribute('class', 'carousel slide');
             carouselOuterDiv.setAttribute('data-bs-ride', 'carousel');
 
-            var carouselInnerDiv = document.createElement('div');
+            let carouselInnerDiv = document.createElement('div');
             carouselInnerDiv.setAttribute('class', 'carousel-inner');
 
-            var isFirst = true;
+            let isFirst = true;
             for (photo of apiMarker.photos) {
-                var carouselItemDiv = document.createElement('div');
+                let carouselItemDiv = document.createElement('div');
                 if (isFirst){
                     carouselItemDiv.setAttribute('class', 'carousel-item active');
                     isFirst=false;
                 }
-                else{
+                else {
                     carouselItemDiv.setAttribute('class', 'carousel-item');
-                    isFirst=false;
+                    isFirst = false;
                 }
-                var carouselItemImg = document.createElement('img');
+
+                let carouselItemImg = document.createElement('img');
                 carouselItemImg.setAttribute('src', API_PATH + '/photos/' + photo.fileName);
                 carouselItemImg.setAttribute('class', 'd-block w-100');
                 carouselItemImg.setAttribute('alt', photo.fileName);
@@ -179,34 +179,34 @@
 
             carouselOuterDiv.append(carouselInnerDiv);
 
-            var carouselButtonPrevious = document.createElement('button');
+            let carouselButtonPrevious = document.createElement('button');
             carouselButtonPrevious.setAttribute('class', 'carousel-control-prev');
             carouselButtonPrevious.setAttribute('type', 'button');
             carouselButtonPrevious.setAttribute('data-bs-target', '#' + 'carousel_' + apiMarker.name);
             carouselButtonPrevious.setAttribute('data-bs-slide', 'prev');
 
-            var carouselButtonPreviousSpanIcon = document.createElement('span');
+            let carouselButtonPreviousSpanIcon = document.createElement('span');
             carouselButtonPreviousSpanIcon.setAttribute('class', 'carousel-control-prev-icon');
             carouselButtonPreviousSpanIcon.setAttribute('aria-hidden', 'true');
 
-            var carouselButtonPreviousSpanText = document.createElement('span');
+            let carouselButtonPreviousSpanText = document.createElement('span');
             carouselButtonPreviousSpanText.setAttribute('class', 'visually-hidden');
             carouselButtonPreviousSpanText.textContent = 'Previous';
 
             carouselButtonPrevious.append(carouselButtonPreviousSpanIcon);
             carouselButtonPrevious.append(carouselButtonPreviousSpanText);
 
-            var carouselButtonNext = document.createElement('button');
+            let carouselButtonNext = document.createElement('button');
             carouselButtonNext.setAttribute('class', 'carousel-control-next');
             carouselButtonNext.setAttribute('type', 'button');
             carouselButtonNext.setAttribute('data-bs-target', '#' + 'carousel_' + apiMarker.name);
             carouselButtonNext.setAttribute('data-bs-slide', 'next');
 
-            var carouselButtonNextSpanIcon = document.createElement('span');
+            let carouselButtonNextSpanIcon = document.createElement('span');
             carouselButtonNextSpanIcon.setAttribute('class', 'carousel-control-next-icon');
             carouselButtonNextSpanIcon.setAttribute('aria-hidden', 'true');
 
-            var carouselButtonNextSpanText = document.createElement('span');
+            let carouselButtonNextSpanText = document.createElement('span');
             carouselButtonNextSpanText.setAttribute('class', 'visually-hidden');
             carouselButtonNextSpanText.textContent = 'Next';
 
@@ -215,16 +215,17 @@
 
             carouselOuterDiv.append(carouselButtonPrevious);
             carouselOuterDiv.append(carouselButtonNext);
+
             return carouselOuterDiv;
         }
 
         function createMarkerNameForm(markerIndex, markerName) {
-            var markerNameForm = document.createElement('form');
+            let markerNameForm = document.createElement('form');
             markerNameForm.setAttribute('id', 'nameForm_' + markerIndex);
             markerNameForm.setAttribute('class', 'row row-cols-lg-auto g-3 align-items-center');
             markerNameForm.setAttribute('onsubmit', 'return false');
 
-            var htmlMarkerNameForm = `
+            let htmlMarkerNameForm = `
             <div class="col-12">
                 <label class="visually-hidden" for="inlineFormInputMarkerName">Marker name</label>
                 <div class="input-group">
@@ -249,45 +250,47 @@
             }
             leafletMarkersList = [];
 
-            var markerIndex = 0;
+            let markerIndex = 0;
             for (apiMarker of apiMarkers.markers) {
                 // Create marker on the map
-                var marker = L.marker(L.latLng(apiMarker.latitude, apiMarker.longitude));
+                let marker = L.marker(L.latLng(apiMarker.latitude, apiMarker.longitude));
                 leafletMarkersList.push(marker);
                 marker.addTo(leafletMap);
 
                 // Generate custom popup content for each marker
-                var popupContent = document.createElement('div');
+                let popupContent = document.createElement('div');
                 popupContent.append(createTitleAndButtonsElement(apiMarker, markerIndex));
                 popupContent.append(createCarrouselElement(apiMarker));
 
                 // Create document fragment and append "popupContent" div
-                var popupFragment = document.createDocumentFragment();
+                let popupFragment = document.createDocumentFragment();
                 popupFragment.appendChild(popupContent);
-                var popup = L.popup().setContent(popupFragment);
-                marker.bindPopup(popup, {minWidth:300, maxHeight:600} );
+
+                // Get "popupFragment" first child to prevent the documentFragment to be emptied on popup opening
+                // /!\ make sure to provide a documentFragment with a single div to fetch all elements
+                marker.bindPopup(L.popup().setContent(popupFragment.firstChild), {minWidth:300, maxHeight:600});
 
                 markerIndex++;
             }
         }
 
         function editMarkerName(markerIndex, formId) {
-            var newName = document.getElementById(formId).value;
+            let newName = document.getElementById(formId).value;
             apiMarkers.markers[markerIndex].name = newName;
 
             editMarkerRequest(apiMarkers.markers[markerIndex]);
         }
 
         function moveMarker(markerIndex) {
-            movingMarker=apiMarkers.markers[markerIndex];
+            movingMarker = apiMarkers.markers[markerIndex];
             leafletMap.closePopup();
         }
 
         function switchMarkerTitleMode(markerIndex) {
-            var markerTitle = document.getElementById('title_' + markerIndex);
+            let markerTitle = document.getElementById('title_' + markerIndex);
             markerTitle.hidden = !markerTitle.hidden;
 
-            var markerNameForm = document.getElementById('nameForm_' + markerIndex);
+            let markerNameForm = document.getElementById('nameForm_' + markerIndex);
             markerNameForm.hidden = !markerNameForm.hidden;
         }
 
@@ -366,13 +369,15 @@
             }
         }
 
-        function moveMarkerRequest(marker, newLat, newLong) {
+        function moveMarkerRequest(marker, newLatitude, newLongitude) {
             xhrMoveMarker = new XMLHttpRequest();
 
             xhrMoveMarker.open('POST', API_PATH + '/marker/' + marker.latitude.toString() + '/' + marker.longitude.toString(), true);
-            marker.latitude=newLat;
-            marker.longitude=newLong;
             xhrMoveMarker.onreadystatechange = editMarkerHandleResponse;
+
+            // Update the marker coordinates
+            marker.latitude = newLatitude;
+            marker.longitude = newLongitude;
             xhrMoveMarker.send(JSON.stringify(marker));
 
             // HTTP response handling
@@ -388,7 +393,7 @@
             }
         }
 
-        function editMarkerRequest(marker, isMoving=false) {
+        function editMarkerRequest(marker, isMoving = false) {
             xhrEditMarker = new XMLHttpRequest();
 
             xhrEditMarker.open('POST', API_PATH + '/marker/' + marker.latitude.toString() + '/' + marker.longitude.toString(), true);
