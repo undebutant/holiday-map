@@ -36,6 +36,7 @@
         leafletMarkersList = [];
 
         movingMarker = undefined;
+        currentMarkerIndex = -1;
         apiMarkers = [];
 
         L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
@@ -61,14 +62,21 @@
 
         }
 
-        //User interactions on map
+        //----------------------------------------------------------------------------//
+        // User interactions on map
+        //----------------------------------------------------------------------------//
 
-        //disables zoom on double click
+        // Disables zoom on double click
         leafletMap.doubleClickZoom.disable();
-        //handles double click
+
+        // Reset currentMarkerIndex on map single click
+        leafletMap.on('click', function(e) { currentMarkerIndex = -1; });
+
+        // Handles double click
         leafletMap.on('dblclick', onMapClick);
-        //Cancels moving on right click
-        leafletMap.on('contextmenu', function(e) { movingMarker=undefined;});
+
+        // Cancels moving on right click
+        leafletMap.on('contextmenu', function(e) { movingMarker = undefined; });
 
         //----------------------------------------------------------------------------//
         // Utility functions
@@ -149,7 +157,7 @@
 
         function createCarrouselElement(apiMarker){
             let carouselOuterDiv = document.createElement('div');
-            carouselOuterDiv.setAttribute('id', 'carousel_' + apiMarker.name);
+            carouselOuterDiv.setAttribute('id', 'carousel_' + (apiMarker.name).replace(/\s+/g, ''));
             carouselOuterDiv.setAttribute('class', 'carousel slide');
             carouselOuterDiv.setAttribute('data-bs-ride', 'carousel');
 
@@ -182,7 +190,7 @@
             let carouselButtonPrevious = document.createElement('button');
             carouselButtonPrevious.setAttribute('class', 'carousel-control-prev');
             carouselButtonPrevious.setAttribute('type', 'button');
-            carouselButtonPrevious.setAttribute('data-bs-target', '#' + 'carousel_' + apiMarker.name);
+            carouselButtonPrevious.setAttribute('data-bs-target', '#' + 'carousel_' + (apiMarker.name).replace(/\s+/g, ''));
             carouselButtonPrevious.setAttribute('data-bs-slide', 'prev');
 
             let carouselButtonPreviousSpanIcon = document.createElement('span');
@@ -199,7 +207,7 @@
             let carouselButtonNext = document.createElement('button');
             carouselButtonNext.setAttribute('class', 'carousel-control-next');
             carouselButtonNext.setAttribute('type', 'button');
-            carouselButtonNext.setAttribute('data-bs-target', '#' + 'carousel_' + apiMarker.name);
+            carouselButtonNext.setAttribute('data-bs-target', '#' + 'carousel_' + (apiMarker.name).replace(/\s+/g, ''));
             carouselButtonNext.setAttribute('data-bs-slide', 'next');
 
             let carouselButtonNextSpanIcon = document.createElement('span');
@@ -273,8 +281,10 @@
 
             let markerIndex = 0;
             for (apiMarker of apiMarkers.markers) {
-                // Create marker on the map
-                let marker = L.marker(L.latLng(apiMarker.latitude, apiMarker.longitude));
+                // Create marker on the map and add its index as title
+                let marker = L.marker(L.latLng(apiMarker.latitude, apiMarker.longitude), {title: markerIndex});
+                marker.on('click', setCurrentMarkerIndex);
+
                 leafletMarkersList.push(marker);
                 marker.addTo(leafletMap);
 
@@ -304,7 +314,20 @@
                 // /!\ make sure to provide a documentFragment with a single div to fetch all elements
                 marker.bindPopup(L.popup().setContent(popupFragment.firstChild), {minWidth:300, maxHeight:600});
 
+                if (markerIndex == currentMarkerIndex) {
+                    marker.openPopup();
+                }
+
                 markerIndex++;
+            }
+        }
+
+        function setCurrentMarkerIndex(event) {
+            if (currentMarkerIndex == event.sourceTarget.options.title) {
+                currentMarkerIndex = -1;
+            }
+            else {
+                currentMarkerIndex = event.sourceTarget.options.title;
             }
         }
 
@@ -450,7 +473,6 @@
                 if (xhrEditMarker.readyState === XMLHttpRequest.DONE) {
                     if (xhrEditMarker.status === 200) {
                         refreshMarkers();
-
                     } else {
                         alert('Request "editMarker" failed with code ' + xhrEditMarker.status.toString() + ' :(');
                     }
@@ -493,7 +515,7 @@
             function addPhotoHandleResponse() {
                 if (xhrAddPhoto.readyState === XMLHttpRequest.DONE) {
                     if (xhrAddPhoto.status === 200) {
-                        // No response body expected
+                        getAllMarkersRequest();
                     } else {
                         alert('Request "addPhoto" failed with code ' + xhrAddPhoto.status.toString() + ' :(');
                     }
