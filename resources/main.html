@@ -243,6 +243,27 @@
             return markerNameForm;
         }
 
+        function createUploadPhotoForm(markerIndex) {
+            let uploadPhotoForm = document.createElement('form');
+            uploadPhotoForm.setAttribute('class', 'row row-cols-lg-auto g-3 align-items-center');
+            uploadPhotoForm.setAttribute('onsubmit', 'return false');
+
+            let htmlUploadPhotoForm = `
+            <div class="col-12">
+                <label class="visually-hidden" for="formFile">Photo file</label>
+                <input class="form-control" type="file" id="formFile">
+            </div>
+
+            <div class="col-6">
+                <button type="submit" class="btn btn-primary" onClick="uploadPhoto(` + markerIndex + `, 'formFile')">Valider</button>
+            </div>
+            `;
+
+            uploadPhotoForm.innerHTML = htmlUploadPhotoForm;
+
+            return uploadPhotoForm;
+        }
+
         function refreshMarkers() {
             // Delete existing markers
             for (leafletMarker of leafletMarkersList) {
@@ -261,6 +282,19 @@
                 let popupContent = document.createElement('div');
                 popupContent.append(createTitleAndButtonsElement(apiMarker, markerIndex));
                 popupContent.append(createCarrouselElement(apiMarker));
+
+                // Button to toggle photo uploader
+                let editButton = createButtonElement('', 'btn btn-primary', '', 'toggleAddPhoto(' + markerIndex + ')', 'Add photo');
+                let editIcon = createIconElement('', 'fas fa-plus');
+                editButton.append(editIcon);
+                popupContent.append(editButton);
+
+                // Upload photo div
+                let uploadDiv = document.createElement('div');
+                setAttributes(uploadDiv, [{'key':'id','value':'uploadPhotoDiv_' + markerIndex}]);
+                uploadDiv.hidden = true;
+                uploadDiv.append(createUploadPhotoForm(markerIndex));
+                popupContent.append(uploadDiv);
 
                 // Create document fragment and append "popupContent" div
                 let popupFragment = document.createDocumentFragment();
@@ -281,6 +315,13 @@
             editMarkerRequest(apiMarkers.markers[markerIndex]);
         }
 
+        function uploadPhoto(markerIndex, formId) {
+            let newPhoto = document.getElementById(formId).files[0];
+            let targetMarker = apiMarkers.markers[markerIndex];
+
+            addPhotoRequest(targetMarker.latitude, targetMarker.longitude, newPhoto);
+        }
+
         function moveMarker(markerIndex) {
             movingMarker = apiMarkers.markers[markerIndex];
             leafletMap.closePopup();
@@ -292,6 +333,11 @@
 
             let markerNameForm = document.getElementById('nameForm_' + markerIndex);
             markerNameForm.hidden = !markerNameForm.hidden;
+        }
+
+        function toggleAddPhoto(markerIndex) {
+            let photoDiv = document.getElementById('uploadPhotoDiv_' + markerIndex);
+            photoDiv.hidden = !photoDiv.hidden;
         }
 
         function deleteMarkerConfirmation(markerIndex) {
@@ -309,7 +355,7 @@
         //----------------------------------------------------------------------------//
         // FIXME add "no-cache" header in all requests to prevent cache usage
         function getAllMarkersRequest() {
-            xhrGetAllMarkers = new XMLHttpRequest();
+            var xhrGetAllMarkers = new XMLHttpRequest();
 
             xhrGetAllMarkers.open('GET', API_PATH + '/markers', true);
             xhrGetAllMarkers.responseType = "json";
@@ -330,7 +376,7 @@
         }
 
         function getMarkerRequest(latitude, longitude) {
-            xhrGetMarker = new XMLHttpRequest();
+            var xhrGetMarker = new XMLHttpRequest();
 
             xhrGetMarker.open('GET', API_PATH + '/marker/' + latitude.toString() + '/' + longitude.toString(), true);
             xhrGetMarker.responseType = "json";
@@ -350,10 +396,9 @@
         }
 
         function addMarkerRequest(callback, newMarker) {
-            xhrAddMarker = new XMLHttpRequest();
+            var xhrAddMarker = new XMLHttpRequest();
 
             xhrAddMarker.open('PUT', API_PATH + '/marker', true);
-            xhrAddMarker.setRequestHeader('Content-Type', 'application/json');
             xhrAddMarker.onreadystatechange = addMarkerHandleResponse;
             xhrAddMarker.send(JSON.stringify(newMarker));
 
@@ -370,7 +415,7 @@
         }
 
         function moveMarkerRequest(marker, newLatitude, newLongitude) {
-            xhrMoveMarker = new XMLHttpRequest();
+            var xhrMoveMarker = new XMLHttpRequest();
 
             xhrMoveMarker.open('POST', API_PATH + '/marker/' + marker.latitude.toString() + '/' + marker.longitude.toString(), true);
             xhrMoveMarker.onreadystatechange = editMarkerHandleResponse;
@@ -394,7 +439,7 @@
         }
 
         function editMarkerRequest(marker, isMoving = false) {
-            xhrEditMarker = new XMLHttpRequest();
+            var xhrEditMarker = new XMLHttpRequest();
 
             xhrEditMarker.open('POST', API_PATH + '/marker/' + marker.latitude.toString() + '/' + marker.longitude.toString(), true);
             xhrEditMarker.onreadystatechange = editMarkerHandleResponse;
@@ -414,7 +459,7 @@
         }
 
         function deleteMarkerRequest(callback,latitude, longitude) {
-            xhrDeleteMarker = new XMLHttpRequest();
+            var xhrDeleteMarker = new XMLHttpRequest();
 
             xhrDeleteMarker.open('DELETE', API_PATH + '/marker/' + latitude.toString() + '/' + longitude.toString(), true);
             xhrDeleteMarker.onreadystatechange = deleteMarkerHandleResponse;
@@ -432,15 +477,15 @@
             }
         }
 
-        function addPhotoRequest(latitude, longitude) {
+        function addPhotoRequest(latitude, longitude, newPhoto) {
             // Use "multipart-form-data" header for photo upload
-            // FIXME add content to the formData
-            formData = new FormData();
+            let formData = new FormData();
+            formData.append('photo', newPhoto);
 
             // Add file to HTTP request
-            xhrAddPhoto = new XMLHttpRequest();
+            var xhrAddPhoto = new XMLHttpRequest();
 
-            xhrAddPhoto.open('POST', API_PATH + '/marker/' + latitude.toString() + '/' + longitude.toString() + '/photo', true);
+            xhrAddPhoto.open('POST', API_PATH + '/marker/' + latitude.toString() + '/' + longitude.toString() + '/photo?fileName=' + newPhoto.name, true);
             xhrAddPhoto.onreadystatechange = addPhotoHandleResponse;
             xhrAddPhoto.send(formData);
 
@@ -457,7 +502,7 @@
         }
 
         function editPhotoRequest(latitude, longitude, photoId) {
-            xhrEditPhoto = new XMLHttpRequest();
+            var xhrEditPhoto = new XMLHttpRequest();
 
             xhrEditPhoto.open('POST', API_PATH + '/marker/' + latitude.toString() + '/' + longitude.toString() + '/photo/' + photoId, true);
             xhrEditPhoto.onreadystatechange = editPhotoHandleResponse;
@@ -476,7 +521,7 @@
         }
 
         function deletePhotoRequest() {
-            xhrDeletePhoto = new XMLHttpRequest();
+            var xhrDeletePhoto = new XMLHttpRequest();
 
             xhrDeletePhoto.open('DELETE', API_PATH + '/marker/' + latitude.toString() + '/' + longitude.toString() + '/photo/' + photoId, true);
             xhrDeletePhoto.onreadystatechange = deletePhotoHandleResponse;
