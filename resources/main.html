@@ -37,6 +37,7 @@
 
         movingMarker = undefined;
         currentMarkerIndex = -1;
+        currentPhotoId = -1;
         apiMarkers = [];
 
         L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
@@ -84,13 +85,13 @@
 
         // Function to set attributes to an element
         // Attributes must be set through an array of JS objects like {'key': 'keyname','value': 'valuename'}
-        function setAttributes(element, attributes){
+        function setAttributes(element, attributes) {
             for( attribute of attributes){
                 element.setAttribute(attribute.key, attribute.value);
             }
         }
 
-        function createButtonElement(idAttribute, classAttribute, roleAttribute, onClickAttribute, tooltipText = ''){
+        function createButtonElement(idAttribute, classAttribute, roleAttribute, onClickAttribute, tooltipText = '') {
             let button = document.createElement("button");
             button.setAttribute('type', 'button');
             button.setAttribute('class', classAttribute);
@@ -107,7 +108,7 @@
             return button;
         }
 
-        function createIconElement(idAttribute,classAttribute){
+        function createIconElement(idAttribute,classAttribute) {
             let icon = document.createElement('i');
             icon.setAttribute('id',idAttribute);
             icon.setAttribute('class',classAttribute);
@@ -115,7 +116,7 @@
             return icon;
         }
 
-        function createTitleAndButtonsElement(apiMarker, markerIndex){
+        function createTitleAndButtonsElement(apiMarker, markerIndex) {
             let markerTitleDiv = document.createElement('div');
 
             let markerTitle = document.createElement('h3');
@@ -138,7 +139,7 @@
 
             // Edit button
             let editButton = createButtonElement('', 'btn btn-warning', '', 'switchMarkerTitleMode(' + markerIndex + ')', 'Edit marker');
-            let editIcon = createIconElement('', 'fas fa-cog');
+            let editIcon = createIconElement('', 'fas fa-edit');
             editButton.append(editIcon);
 
             // Delete button
@@ -155,7 +156,7 @@
             return markerTitleDiv;
         }
 
-        function createCarrouselElement(apiMarker){
+        function createCarrouselElement(apiMarker) {
             let carouselOuterDiv = document.createElement('div');
             carouselOuterDiv.setAttribute('id', 'carousel_' + (apiMarker.name).replace(/\s+/g, ''));
             carouselOuterDiv.setAttribute('class', 'carousel slide');
@@ -167,13 +168,14 @@
             let isFirst = true;
             for (photo of apiMarker.photos) {
                 let carouselItemDiv = document.createElement('div');
-                if (isFirst){
+                carouselItemDiv.setAttribute('id', photo.id);
+
+                if (isFirst) {
                     carouselItemDiv.setAttribute('class', 'carousel-item active');
-                    isFirst=false;
+                    isFirst = false;
                 }
                 else {
                     carouselItemDiv.setAttribute('class', 'carousel-item');
-                    isFirst = false;
                 }
 
                 let carouselItemImg = document.createElement('img');
@@ -223,6 +225,10 @@
 
             carouselOuterDiv.append(carouselButtonPrevious);
             carouselOuterDiv.append(carouselButtonNext);
+
+            carouselOuterDiv.addEventListener('slide.bs.carousel', function (carouselEvent) {
+                currentPhotoId = carouselEvent.relatedTarget.getAttribute('id');
+            });
 
             return carouselOuterDiv;
         }
@@ -291,13 +297,34 @@
                 // Generate custom popup content for each marker
                 let popupContent = document.createElement('div');
                 popupContent.append(createTitleAndButtonsElement(apiMarker, markerIndex));
-                popupContent.append(createCarrouselElement(apiMarker));
 
-                // Button to toggle photo uploader
-                let editButton = createButtonElement('', 'btn btn-primary', '', 'toggleAddPhoto(' + markerIndex + ')', 'Add photo');
+                let carouselElement = createCarrouselElement(apiMarker);
+                popupContent.append(carouselElement);
+
+                // Add photo button
+                let editButton = createButtonElement('', 'btn btn-success', '', 'toggleAddPhoto(' + markerIndex + ')', 'Add photo');
                 let editIcon = createIconElement('', 'fas fa-plus');
                 editButton.append(editIcon);
                 popupContent.append(editButton);
+
+                // Modify photo buttons
+                let buttonDiv = document.createElement('div');
+                setAttributes(buttonDiv, [{'key':'class', 'value':'btn-group'}, {'key':'role', 'value':'group'}]);
+
+                // Edit photo
+                // FIXME add callback
+                let editPhotoButton = createButtonElement('', 'btn btn-warning', '', '', 'Edit photo');
+                let editPhotoIcon = createIconElement('', 'fas fa-edit');
+                editPhotoButton.append(editPhotoIcon);
+
+                // Delete photo
+                let deletePhotoButton = createButtonElement('', 'btn btn-danger', '', 'deletePhotoConfirmation()', 'Delete photo');
+                let deletePhotoIcon = createIconElement('', 'fas fa-trash-alt');
+                deletePhotoButton.append(deletePhotoIcon);
+
+                buttonDiv.append(editPhotoButton);
+                buttonDiv.append(deletePhotoButton);
+                popupContent.append(buttonDiv);
 
                 // Upload photo div
                 let uploadDiv = document.createElement('div');
@@ -312,7 +339,13 @@
 
                 // Get "popupFragment" first child to prevent the documentFragment to be emptied on popup opening
                 // /!\ make sure to provide a documentFragment with a single div to fetch all elements
-                marker.bindPopup(L.popup().setContent(popupFragment.firstChild), {minWidth:300, maxHeight:600});
+                let newPopup = L.popup();
+                newPopup.setContent(popupFragment.firstChild);
+
+                marker.bindPopup(newPopup, {minWidth:300, maxHeight:600});
+                marker.on('popupopen', function () {
+                    currentPhotoId = carouselElement.firstElementChild.firstElementChild.getAttribute('id');
+                });
 
                 if (markerIndex == currentMarkerIndex) {
                     marker.openPopup();
@@ -364,11 +397,21 @@
         }
 
         function deleteMarkerConfirmation(markerIndex) {
-            targetMarker = apiMarkers.markers[markerIndex];
+            let targetMarker = apiMarkers.markers[markerIndex];
 
-            isDeleting = window.confirm('Delete marker "' + targetMarker.name + '"?');
+            let isDeleting = window.confirm('Supprimer le marqueur "' + targetMarker.name + '" ?');
             if (isDeleting) {
-                deleteMarkerRequest(getAllMarkersRequest,targetMarker.latitude, targetMarker.longitude);
+                deleteMarkerRequest(getAllMarkersRequest, targetMarker.latitude, targetMarker.longitude);
+                getAllMarkersRequest();
+            }
+        }
+
+        function deletePhotoConfirmation() {
+            let targetMarker = apiMarkers.markers[currentMarkerIndex];
+
+            let isDeleting = window.confirm('Supprimer la photo affichée ?');
+            if (isDeleting) {
+                deletePhotoRequest(targetMarker.latitude, targetMarker.longitude, currentPhotoId);
                 getAllMarkersRequest();
             }
         }
@@ -542,7 +585,7 @@
             }
         }
 
-        function deletePhotoRequest() {
+        function deletePhotoRequest(latitude, longitude, photoId) {
             var xhrDeletePhoto = new XMLHttpRequest();
 
             xhrDeletePhoto.open('DELETE', API_PATH + '/marker/' + latitude.toString() + '/' + longitude.toString() + '/photo/' + photoId, true);
