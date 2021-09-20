@@ -178,12 +178,27 @@
                     carouselItemDiv.setAttribute('class', 'carousel-item');
                 }
 
+                // Carousel image
                 let carouselItemImg = document.createElement('img');
                 carouselItemImg.setAttribute('src', API_PATH + '/photos/' + photo.fileName);
                 carouselItemImg.setAttribute('class', 'd-block w-100');
                 carouselItemImg.setAttribute('alt', photo.fileName);
 
                 carouselItemDiv.append(carouselItemImg);
+
+                // Carousel caption
+                let carouselCaptionDiv = document.createElement('div');
+                carouselCaptionDiv.setAttribute('class', 'carousel-caption d-none d-md-block');
+
+                let carouselCaptionTitle = document.createElement('h5');
+                carouselCaptionTitle.textContent = photo.date;
+                let carouselCaptionText = document.createElement('p');
+                carouselCaptionText.textContent = photo.description;
+
+                carouselCaptionDiv.append(carouselCaptionTitle);
+                carouselCaptionDiv.append(carouselCaptionText);
+                carouselItemDiv.append(carouselCaptionDiv);
+
                 carouselInnerDiv.append(carouselItemDiv);
             }
 
