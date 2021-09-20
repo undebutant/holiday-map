@@ -283,7 +283,7 @@
                 <input class="form-control" type="file" id="formFile">
             </div>
 
-            <div class="col-6">
+            <div class="col-12">
                 <button type="submit" class="btn btn-primary" onClick="uploadPhoto(` + markerIndex + `, 'formFile')">Valider</button>
             </div>
             `;
@@ -291,6 +291,28 @@
             uploadPhotoForm.innerHTML = htmlUploadPhotoForm;
 
             return uploadPhotoForm;
+        }
+
+        function createEditPhotoForm() {
+            let editPhotoForm = document.createElement('form');
+            editPhotoForm.setAttribute('onsubmit', 'return false');
+
+            let htmlEditPhotoForm = `
+            <div class="mb-3">
+                <label class="form-label" for="date">Date</label>
+                <input type="text" class="form-control" id="date" rows="3" value="">
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="description">Description</label>
+                <textarea class="form-control" id="description" rows="3" value=""></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary" onClick="editPhoto('date', 'description')">Valider</button>
+            `;
+
+            editPhotoForm.innerHTML = htmlEditPhotoForm;
+
+            return editPhotoForm;
         }
 
         function refreshMarkers() {
@@ -326,11 +348,16 @@
                 let buttonDiv = document.createElement('div');
                 setAttributes(buttonDiv, [{'key':'class', 'value':'btn-group'}, {'key':'role', 'value':'group'}]);
 
-                // Edit photo
-                // FIXME add callback
-                let editPhotoButton = createButtonElement('', 'btn btn-warning', '', '', 'Edit photo');
+                // Edit photo button
+                let editPhotoButton = createButtonElement('', 'btn btn-warning', '', 'toggleEditPhoto(' + markerIndex + ')', 'Edit photo');
                 let editPhotoIcon = createIconElement('', 'fas fa-edit');
                 editPhotoButton.append(editPhotoIcon);
+
+                // Edit photo div
+                let editPhotoDiv = document.createElement('div');
+                setAttributes(editPhotoDiv, [{'key':'id','value':'editPhotoDiv_' + markerIndex}]);
+                editPhotoDiv.hidden = true;
+                editPhotoDiv.append(createEditPhotoForm());
 
                 // Delete photo
                 let deletePhotoButton = createButtonElement('', 'btn btn-danger', '', 'deletePhotoConfirmation()', 'Delete photo');
@@ -340,6 +367,9 @@
                 buttonDiv.append(editPhotoButton);
                 buttonDiv.append(deletePhotoButton);
                 popupContent.append(buttonDiv);
+
+                // Append edit photo form
+                popupContent.append(editPhotoDiv);
 
                 // Upload photo div
                 let uploadDiv = document.createElement('div');
@@ -358,8 +388,12 @@
                 newPopup.setContent(popupFragment.firstChild);
 
                 marker.bindPopup(newPopup, {minWidth:300, maxHeight:600});
+
                 marker.on('popupopen', function () {
                     currentPhotoId = carouselElement.firstElementChild.firstElementChild.getAttribute('id');
+
+                    uploadDiv.hidden = true;
+                    editPhotoDiv.hidden = true;
                 });
 
                 if (markerIndex == currentMarkerIndex) {
@@ -386,13 +420,6 @@
             editMarkerRequest(apiMarkers.markers[markerIndex]);
         }
 
-        function uploadPhoto(markerIndex, formId) {
-            let newPhoto = document.getElementById(formId).files[0];
-            let targetMarker = apiMarkers.markers[markerIndex];
-
-            addPhotoRequest(targetMarker.latitude, targetMarker.longitude, newPhoto);
-        }
-
         function moveMarker(markerIndex) {
             movingMarker = apiMarkers.markers[markerIndex];
             leafletMap.closePopup();
@@ -406,11 +433,6 @@
             markerNameForm.hidden = !markerNameForm.hidden;
         }
 
-        function toggleAddPhoto(markerIndex) {
-            let photoDiv = document.getElementById('uploadPhotoDiv_' + markerIndex);
-            photoDiv.hidden = !photoDiv.hidden;
-        }
-
         function deleteMarkerConfirmation(markerIndex) {
             let targetMarker = apiMarkers.markers[markerIndex];
 
@@ -419,6 +441,46 @@
                 deleteMarkerRequest(getAllMarkersRequest, targetMarker.latitude, targetMarker.longitude);
                 getAllMarkersRequest();
             }
+        }
+
+        function toggleAddPhoto(markerIndex) {
+            let addPhotoDiv = document.getElementById('uploadPhotoDiv_' + markerIndex);
+            let editPhotoDiv = document.getElementById('editPhotoDiv_' + markerIndex);
+
+            if (!editPhotoDiv.hidden) {
+                editPhotoDiv.hidden = true;
+            }
+
+            addPhotoDiv.hidden = !addPhotoDiv.hidden;
+        }
+
+        function uploadPhoto(markerIndex, formId) {
+            let newPhoto = document.getElementById(formId).files[0];
+            let targetMarker = apiMarkers.markers[markerIndex];
+
+            addPhotoRequest(targetMarker.latitude, targetMarker.longitude, newPhoto);
+        }
+
+        function toggleEditPhoto(markerIndex) {
+            let addPhotoDiv = document.getElementById('uploadPhotoDiv_' + markerIndex);
+            let editPhotoDiv = document.getElementById('editPhotoDiv_' + markerIndex);
+
+            if (!addPhotoDiv.hidden) {
+                addPhotoDiv.hidden = true;
+            }
+
+            editPhotoDiv.hidden = !editPhotoDiv.hidden;
+        }
+
+        function editPhoto(dateInputId, descriptionInputId) {
+            let targetMarker = apiMarkers.markers[currentMarkerIndex];
+
+            let newDate = document.getElementById(dateInputId).value;
+            let newDescription = document.getElementById(descriptionInputId).value;
+
+            let editedPhoto = { 'id': parseInt(currentPhotoId), 'date': newDate, 'description': newDescription };
+
+            editPhotoRequest(targetMarker.latitude, targetMarker.longitude, editedPhoto);
         }
 
         function deletePhotoConfirmation() {
@@ -581,18 +643,18 @@
             }
         }
 
-        function editPhotoRequest(latitude, longitude, photoId) {
+        function editPhotoRequest(latitude, longitude, editedPhoto) {
             var xhrEditPhoto = new XMLHttpRequest();
 
-            xhrEditPhoto.open('POST', API_PATH + '/marker/' + latitude.toString() + '/' + longitude.toString() + '/photo/' + photoId, true);
+            xhrEditPhoto.open('POST', API_PATH + '/marker/' + latitude.toString() + '/' + longitude.toString() + '/photo/' + editedPhoto.id, true);
             xhrEditPhoto.onreadystatechange = editPhotoHandleResponse;
-            xhrEditPhoto.send();
+            xhrEditPhoto.send(JSON.stringify(editedPhoto));
 
             // HTTP response handling
             function editPhotoHandleResponse() {
                 if (xhrEditPhoto.readyState === XMLHttpRequest.DONE) {
                     if (xhrEditPhoto.status === 200) {
-                        // No response body expected
+                        getAllMarkersRequest();
                     } else {
                         alert('Request "editPhoto" failed with code ' + xhrEditPhoto.status.toString() + ' :(');
                     }
