@@ -14,12 +14,22 @@ import (
 //--------------------------------------------------------------------------------------------------------------------//
 // Consts definitions
 //--------------------------------------------------------------------------------------------------------------------//
+const AUTH_PATH = "./data/auth.json"
 const JSON_PATH = "./data/data.json"
 const PHOTOS_PATH = "./data/photos/"
 
 //--------------------------------------------------------------------------------------------------------------------//
 // Structs definitions
 //--------------------------------------------------------------------------------------------------------------------//
+type Users struct {
+	Users []User `json:"users"`
+}
+
+type User struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
 type Data struct {
 	Markers    []Marker `json:"markers"`
 	PhotoCount int      `json:"photoCount"`
@@ -52,6 +62,30 @@ type MinimalMarker struct {
 //--------------------------------------------------------------------------------------------------------------------//
 // Utilities functions
 //--------------------------------------------------------------------------------------------------------------------//
+func getJsonAuth() (map[string]string, error) {
+	var users Users
+	var usersMap map[string]string = map[string]string{}
+
+	jsonData, fileError := os.Open(AUTH_PATH)
+	if fileError != nil {
+		return usersMap, fileError
+	}
+	defer jsonData.Close()
+
+	byteValue, decodingError := ioutil.ReadAll(jsonData)
+	if decodingError != nil {
+		return usersMap, decodingError
+	}
+
+	json.Unmarshal(byteValue, &users)
+
+	for _, user := range users.Users {
+		usersMap[user.Username] = user.Password
+	}
+
+	return usersMap, nil
+}
+
 func getJsonData(context *gin.Context) (Data, error) {
 	var data Data
 
@@ -391,26 +425,35 @@ func main() {
 	// Create a gin router with default middleware
 	router := gin.Default()
 
-	// Serve static web files
-	router.StaticFile("/", "./resources/main.html")
-	router.StaticFile("/favicon.ico", "./resources/favicon.ico")
-	router.StaticFile("/static/main.css", "./resources/main.css")
+	// Fetch authorized users
+	users, fetchUsersError := getJsonAuth()
+	if fetchUsersError != nil {
+		return
+	}
 
-	router.Static("/static/fontawesome", "./resources/fontawesome")
+	// Create a group using the gin.BasicAuth() middleware for authentication
+	authorizedRoute := router.Group("", gin.BasicAuth(users))
+
+	// Serve static web files
+	authorizedRoute.StaticFile("/", "./resources/main.html")
+	authorizedRoute.StaticFile("/favicon.ico", "./resources/favicon.ico")
+	authorizedRoute.StaticFile("/static/main.css", "./resources/main.css")
+
+	authorizedRoute.Static("/static/fontawesome", "./resources/fontawesome")
 
 	// Serve photos
-	router.Static("/photos", "./data/photos")
+	authorizedRoute.Static("/photos", "./data/photos")
 
 	// Dynamic routing
-	router.GET("/markers", getMarkers)
-	router.GET("/marker/:latitude/:longitude", getMarker)
-	router.PUT("/marker", addMarker)
-	router.POST("/marker/:latitude/:longitude", editMarker)
-	router.DELETE("/marker/:latitude/:longitude", deleteMarker)
+	authorizedRoute.GET("/markers", getMarkers)
+	authorizedRoute.GET("/marker/:latitude/:longitude", getMarker)
+	authorizedRoute.PUT("/marker", addMarker)
+	authorizedRoute.POST("/marker/:latitude/:longitude", editMarker)
+	authorizedRoute.DELETE("/marker/:latitude/:longitude", deleteMarker)
 
-	router.POST("/marker/:latitude/:longitude/photo", addPhoto)
-	router.POST("/marker/:latitude/:longitude/photo/:photoId", editPhoto)
-	router.DELETE("/marker/:latitude/:longitude/photo/:photoId", deletePhoto)
+	authorizedRoute.POST("/marker/:latitude/:longitude/photo", addPhoto)
+	authorizedRoute.POST("/marker/:latitude/:longitude/photo/:photoId", editPhoto)
+	authorizedRoute.DELETE("/marker/:latitude/:longitude/photo/:photoId", deletePhoto)
 
 	// Listen and serve on localhost:8080
 	router.Run()
