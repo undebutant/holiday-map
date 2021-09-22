@@ -8,12 +8,12 @@
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
-    <!-- CSS -->
-    <link rel="stylesheet" href="http://127.0.0.1:8080/static/main.css">
     <!-- FontAwesome -->
     <link rel="stylesheet" href="http://127.0.0.1:8080/static/fontawesome/css/all.css">
     <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">
+    <!-- CSS -->
+    <link rel="stylesheet" href="http://127.0.0.1:8080/static/main.css">
 </head>
 
 <body>
@@ -37,7 +37,7 @@
 
         movingMarker = undefined;
         currentMarkerIndex = -1;
-        currentPhotoId = -1;
+        currentPhoto = {};
         apiMarkers = [];
 
         L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
@@ -188,11 +188,11 @@
 
                 // Carousel caption
                 let carouselCaptionDiv = document.createElement('div');
-                carouselCaptionDiv.setAttribute('class', 'carousel-caption d-none d-md-block');
+                carouselCaptionDiv.setAttribute('class', 'carousel-caption d-none d-md-block bg-dark');
 
                 let carouselCaptionTitle = document.createElement('h5');
                 carouselCaptionTitle.textContent = photo.date;
-                let carouselCaptionText = document.createElement('p');
+                let carouselCaptionText = document.createElement('span');
                 carouselCaptionText.textContent = photo.description;
 
                 carouselCaptionDiv.append(carouselCaptionTitle);
@@ -242,7 +242,23 @@
             carouselOuterDiv.append(carouselButtonNext);
 
             carouselOuterDiv.addEventListener('slide.bs.carousel', function (carouselEvent) {
-                currentPhotoId = carouselEvent.relatedTarget.getAttribute('id');
+                let currentCarrouselItemDiv = carouselEvent.relatedTarget;
+
+                let currentPhotoId = currentCarrouselItemDiv.getAttribute('id');
+
+                // Fetch date and description from the carousel item caption
+                let currentPhotoDate = currentCarrouselItemDiv.children[1].children[0].textContent;
+                let currentPhotoDescription = currentCarrouselItemDiv.children[1].children[1].textContent;
+
+                // Update current photo global variable
+                currentPhoto = { 'id': currentPhotoId, 'date': currentPhotoDate, 'description': currentPhotoDescription };
+
+                // Update edit photo form inputs
+                let dateFormInput = document.getElementById('date');
+                dateFormInput.setAttribute('value', currentPhotoDate);
+
+                let descriptionFormInput = document.getElementById('description');
+                descriptionFormInput.textContent = currentPhotoDescription;
             });
 
             return carouselOuterDiv;
@@ -304,7 +320,7 @@
             </div>
             <div class="mb-3">
                 <label class="form-label" for="description">Description</label>
-                <textarea class="form-control" id="description" rows="3" value=""></textarea>
+                <textarea class="form-control" id="description" rows="3"></textarea>
             </div>
 
             <button type="submit" class="btn btn-primary" onClick="editPhoto('date', 'description')">Valider</button>
@@ -387,10 +403,18 @@
                 let newPopup = L.popup();
                 newPopup.setContent(popupFragment.firstChild);
 
-                marker.bindPopup(newPopup, {minWidth:300, maxHeight:600});
+                marker.bindPopup(newPopup, {minWidth: 400, maxHeight: 800});
 
                 marker.on('popupopen', function () {
-                    currentPhotoId = carouselElement.firstElementChild.firstElementChild.getAttribute('id');
+                    let currentCarrouselItemDiv = carouselElement.firstElementChild.firstElementChild;
+
+                    let currentPhotoId = currentCarrouselItemDiv.getAttribute('id');
+
+                    // Fetch date and description from the carousel item caption
+                    let currentPhotoDate = currentCarrouselItemDiv.children[1].children[0].textContent;
+                    let currentPhotoDescription = currentCarrouselItemDiv.children[1].children[1].textContent;
+
+                    currentPhoto = { 'id': currentPhotoId, 'date': currentPhotoDate, 'description': currentPhotoDescription };
 
                     uploadDiv.hidden = true;
                     editPhotoDiv.hidden = true;
@@ -469,6 +493,12 @@
                 addPhotoDiv.hidden = true;
             }
 
+            let dateFormInput = document.getElementById('date');
+            dateFormInput.setAttribute('value', currentPhoto.date);
+
+            let descriptionFormInput = document.getElementById('description');
+            descriptionFormInput.textContent = currentPhoto.description;
+
             editPhotoDiv.hidden = !editPhotoDiv.hidden;
         }
 
@@ -478,7 +508,7 @@
             let newDate = document.getElementById(dateInputId).value;
             let newDescription = document.getElementById(descriptionInputId).value;
 
-            let editedPhoto = { 'id': parseInt(currentPhotoId), 'date': newDate, 'description': newDescription };
+            let editedPhoto = { 'id': parseInt(currentPhoto.id), 'date': newDate, 'description': newDescription };
 
             editPhotoRequest(targetMarker.latitude, targetMarker.longitude, editedPhoto);
         }
@@ -488,7 +518,7 @@
 
             let isDeleting = window.confirm('Supprimer la photo affichée ?');
             if (isDeleting) {
-                deletePhotoRequest(targetMarker.latitude, targetMarker.longitude, currentPhotoId);
+                deletePhotoRequest(targetMarker.latitude, targetMarker.longitude, currentPhoto.id);
                 getAllMarkersRequest();
             }
         }
