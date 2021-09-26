@@ -17,11 +17,14 @@ import (
 //--------------------------------------------------------------------------------------------------------------------//
 // Consts definitions
 //--------------------------------------------------------------------------------------------------------------------//
-const AUTH_PATH = "./data/auth.json"
-const JSON_PATH = "./data/data.json"
-const PHOTOS_PATH = "./data/photos/"
+const SERVER_FOLDER = "/var/www/holiday-map"
+
+const AUTH_PATH = SERVER_FOLDER + "/data/auth.json"
+const JSON_PATH = SERVER_FOLDER + "/data/data.json"
+const PHOTOS_PATH = SERVER_FOLDER + "/data/photos/"
 
 const DOMAIN_NAME = "example.web.site"
+const LETS_ENCRYPT_CACHE = SERVER_FOLDER + "/.cache"
 
 //--------------------------------------------------------------------------------------------------------------------//
 // Structs definitions
@@ -440,14 +443,14 @@ func main() {
 	authorizedRoute := router.Group("", gin.BasicAuth(users))
 
 	// Serve static web files
-	authorizedRoute.StaticFile("/", "./resources/main.html")
-	authorizedRoute.StaticFile("/favicon.ico", "./resources/favicon.ico")
-	authorizedRoute.StaticFile("/static/main.css", "./resources/main.css")
+	authorizedRoute.StaticFile("/", SERVER_FOLDER+"/resources/main.html")
+	authorizedRoute.StaticFile("/favicon.ico", SERVER_FOLDER+"/resources/favicon.ico")
+	authorizedRoute.StaticFile("/static/main.css", SERVER_FOLDER+"/resources/main.css")
 
-	authorizedRoute.Static("/static/fontawesome", "./resources/fontawesome")
+	authorizedRoute.Static("/static/fontawesome", SERVER_FOLDER+"/resources/fontawesome")
 
 	// Serve photos
-	authorizedRoute.Static("/photos", "./data/photos")
+	authorizedRoute.Static("/photos", SERVER_FOLDER+"/data/photos")
 
 	// Dynamic routing
 	authorizedRoute.GET("/markers", getMarkers)
@@ -463,7 +466,7 @@ func main() {
 	certificateManager := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,
 		HostPolicy: autocert.HostWhitelist(DOMAIN_NAME),
-		Cache:      autocert.DirCache("/var/www/holiday-map/.cache"),
+		Cache:      autocert.DirCache(LETS_ENCRYPT_CACHE),
 	}
 
 	// Listen and serve API with HTTP and HTTPS
