@@ -4,11 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
 
+	"github.com/gin-gonic/autotls"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/acme/autocert"
 )
 
 //--------------------------------------------------------------------------------------------------------------------//
@@ -17,6 +20,8 @@ import (
 const AUTH_PATH = "./data/auth.json"
 const JSON_PATH = "./data/data.json"
 const PHOTOS_PATH = "./data/photos/"
+
+const DOMAIN_NAME = "example.web.site"
 
 //--------------------------------------------------------------------------------------------------------------------//
 // Structs definitions
@@ -455,6 +460,12 @@ func main() {
 	authorizedRoute.POST("/marker/:latitude/:longitude/photo/:photoId", editPhoto)
 	authorizedRoute.DELETE("/marker/:latitude/:longitude/photo/:photoId", deletePhoto)
 
-	// Listen and serve on localhost:8080
-	router.Run()
+	certificateManager := autocert.Manager{
+		Prompt:     autocert.AcceptTOS,
+		HostPolicy: autocert.HostWhitelist(DOMAIN_NAME),
+		Cache:      autocert.DirCache("/var/www/holiday-map/.cache"),
+	}
+
+	// Listen and serve API with HTTP and HTTPS
+	log.Fatal(autotls.RunWithManager(router, &certificateManager))
 }
