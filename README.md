@@ -1,6 +1,7 @@
 # holiday-map
 
-A basic holiday map website with a Go backend and a vanilla JS frontend leveraging [Leaflet](https://leafletjs.com)
+A basic holiday map website to pin places you went and add photos to it, with a Go backend and a vanilla JS frontend
+leveraging [Leaflet](https://leafletjs.com) for the map part.
 
 ## Required files
 
