@@ -19,7 +19,7 @@ An `auth.json` file, used to limit the access to the website with Basic Auth:
 }
 ```
 
-A `data.json` file, used as a makeshift database for easy setup:
+A `data.json` file, used as a makeshift database for an easy setup:
 ```json
 {
     "markers": [],
