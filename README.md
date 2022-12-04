@@ -26,3 +26,25 @@ A `data.json` file, used as a makeshift database for an easy setup:
     "photoCount": 0
 }
 ```
+
+## Additional config
+
+You will have to configure this fields to run this application from a server:
+
+```go
+// main.go
+const SERVER_FOLDER = "/path/to/the/folder/with/app/and/data"
+const DOMAIN_NAME = "my.awesome.website"
+```
+
+```html
+<!-- resources/main.html customize FontAwesome kit -->
+
+<!-- FontAwesome -->
+<script src="https://kit.fontawesome.com/4988160acf.js" crossorigin="anonymous"></script>
+```
+
+```javascript
+// resources/main.html
+const API_PATH = 'https://my.awesome.website'
+```
