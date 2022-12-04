@@ -6,7 +6,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -20,7 +19,7 @@ import (
 //--------------------------------------------------------------------------------------------------------------------//
 // Consts definitions
 //--------------------------------------------------------------------------------------------------------------------//
-const SERVER_FOLDER = "/var/www/holiday-map"
+const SERVER_FOLDER = "/var/www/holiday-website"
 
 const AUTH_PATH = SERVER_FOLDER + "/data/auth.json"
 const JSON_PATH = SERVER_FOLDER + "/data/data.json"
@@ -466,6 +465,10 @@ func main() {
 	authorizedRoute.POST("/marker/:latitude/:longitude/photo/:photoId", editPhoto)
 	authorizedRoute.DELETE("/marker/:latitude/:longitude/photo/:photoId", deletePhoto)
 
+	// Listen and serve on localhost:8080 without Let's Encrypt
+	//router.Run()
+
+	// Let's Encrypt configuration
 	certificateManager := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,
 		HostPolicy: autocert.HostWhitelist(DOMAIN_NAME),
