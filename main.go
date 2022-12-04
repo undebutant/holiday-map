@@ -6,6 +6,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -19,7 +20,7 @@ import (
 //--------------------------------------------------------------------------------------------------------------------//
 // Consts definitions
 //--------------------------------------------------------------------------------------------------------------------//
-const SERVER_FOLDER = "/var/www/holiday-website"
+const SERVER_FOLDER = "/var/www/holiday-map"
 
 const AUTH_PATH = SERVER_FOLDER + "/data/auth.json"
 const JSON_PATH = SERVER_FOLDER + "/data/data.json"
@@ -82,7 +83,7 @@ func getJsonAuth() (map[string]string, error) {
 	}
 	defer jsonData.Close()
 
-	byteValue, decodingError := ioutil.ReadAll(jsonData)
+	byteValue, decodingError := io.ReadAll(jsonData)
 	if decodingError != nil {
 		return usersMap, decodingError
 	}
@@ -105,7 +106,7 @@ func getJsonData(context *gin.Context) (Data, error) {
 	}
 	defer jsonData.Close()
 
-	byteValue, decodingError := ioutil.ReadAll(jsonData)
+	byteValue, decodingError := io.ReadAll(jsonData)
 	if decodingError != nil {
 		return data, decodingError
 	}
@@ -120,7 +121,7 @@ func setJsonData(context *gin.Context, data Data) error {
 		return marshalError
 	}
 
-	writeError := ioutil.WriteFile(JSON_PATH, file, 0777)
+	writeError := os.WriteFile(JSON_PATH, file, 0777)
 	if writeError != nil {
 		return writeError
 	}
