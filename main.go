@@ -97,7 +97,7 @@ func getJsonAuth() (map[string]string, error) {
 	return usersMap, nil
 }
 
-func getJsonData(context *gin.Context) (Data, error) {
+func getJsonData() (Data, error) {
 	var data Data
 
 	jsonData, fileError := os.Open(JSON_PATH)
@@ -115,7 +115,7 @@ func getJsonData(context *gin.Context) (Data, error) {
 	return data, nil
 }
 
-func setJsonData(context *gin.Context, data Data) error {
+func setJsonData(data Data) error {
 	file, marshalError := json.MarshalIndent(data, "", "    ")
 	if marshalError != nil {
 		return marshalError
@@ -155,7 +155,7 @@ func removePhotoFromArray(photoArray []Photo, removeIndex int) []Photo {
 // Route functions
 //--------------------------------------------------------------------------------------------------------------------//
 func getMarkers(context *gin.Context) {
-	data, readError := getJsonData(context)
+	data, readError := getJsonData()
 	if readError != nil {
 		context.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -179,7 +179,7 @@ func getMarkers(context *gin.Context) {
 }
 
 func getMarker(context *gin.Context) {
-	data, readError := getJsonData(context)
+	data, readError := getJsonData()
 	if readError != nil {
 		context.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -205,7 +205,7 @@ func addMarker(context *gin.Context) {
 		return
 	}
 
-	currentData, readError := getJsonData(context)
+	currentData, readError := getJsonData()
 	if readError != nil {
 		context.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -214,7 +214,7 @@ func addMarker(context *gin.Context) {
 	// Remove photo parameter for marker creation
 	markerData.Photos = make([]Photo, 0)
 	currentData.Markers = append(currentData.Markers, markerData)
-	writeError := setJsonData(context, currentData)
+	writeError := setJsonData(currentData)
 	if writeError != nil {
 		context.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -224,7 +224,7 @@ func addMarker(context *gin.Context) {
 }
 
 func editMarker(context *gin.Context) {
-	data, readError := getJsonData(context)
+	data, readError := getJsonData()
 	if readError != nil {
 		context.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -246,7 +246,7 @@ func editMarker(context *gin.Context) {
 			marker.Name = markerData.Name
 
 			data.Markers[index] = marker
-			writeError := setJsonData(context, data)
+			writeError := setJsonData(data)
 			if writeError != nil {
 				context.AbortWithStatus(http.StatusInternalServerError)
 				return
@@ -261,7 +261,7 @@ func editMarker(context *gin.Context) {
 }
 
 func deleteMarker(context *gin.Context) {
-	data, readError := getJsonData(context)
+	data, readError := getJsonData()
 	if readError != nil {
 		context.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -279,7 +279,7 @@ func deleteMarker(context *gin.Context) {
 
 			// Remove marker from data
 			data.Markers = removeMarkerFromArray(data.Markers, index)
-			writeError := setJsonData(context, data)
+			writeError := setJsonData(data)
 			if writeError != nil {
 				context.AbortWithStatus(http.StatusInternalServerError)
 				return
@@ -302,7 +302,7 @@ func deleteMarker(context *gin.Context) {
 }
 
 func addPhoto(context *gin.Context) {
-	data, readError := getJsonData(context)
+	data, readError := getJsonData()
 	if readError != nil {
 		context.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -332,7 +332,7 @@ func addPhoto(context *gin.Context) {
 			context.SaveUploadedFile(file, PHOTOS_PATH+photo.FileName)
 
 			data.Markers[index] = marker
-			writeError := setJsonData(context, data)
+			writeError := setJsonData(data)
 			if writeError != nil {
 				context.AbortWithStatus(http.StatusInternalServerError)
 				return
@@ -347,7 +347,7 @@ func addPhoto(context *gin.Context) {
 }
 
 func editPhoto(context *gin.Context) {
-	data, readError := getJsonData(context)
+	data, readError := getJsonData()
 	if readError != nil {
 		context.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -371,7 +371,7 @@ func editPhoto(context *gin.Context) {
 					photo.Date = photoData.Date
 
 					data.Markers[index].Photos[photoIndex] = photo
-					writeError := setJsonData(context, data)
+					writeError := setJsonData(data)
 					if writeError != nil {
 						context.AbortWithStatus(http.StatusInternalServerError)
 						return
@@ -388,7 +388,7 @@ func editPhoto(context *gin.Context) {
 }
 
 func deletePhoto(context *gin.Context) {
-	data, readError := getJsonData(context)
+	data, readError := getJsonData()
 	if readError != nil {
 		context.AbortWithStatus(http.StatusInternalServerError)
 		return
@@ -407,7 +407,7 @@ func deletePhoto(context *gin.Context) {
 					marker.Photos = removePhotoFromArray(marker.Photos, photoIndex)
 
 					data.Markers[index] = marker
-					writeError := setJsonData(context, data)
+					writeError := setJsonData(data)
 					if writeError != nil {
 						context.AbortWithStatus(http.StatusInternalServerError)
 						return
