@@ -29,7 +29,7 @@ A `data.json` file, used as a makeshift database for an easy setup:
 
 ## Additional config
 
-You will have to configure this fields to run this application from a server:
+You will have to configure these fields to run this application from your server:
 
 ```go
 // main.go
